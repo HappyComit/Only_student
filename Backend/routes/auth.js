@@ -181,13 +181,15 @@ router.post('/login', async (req, res) => {
 });
 const nodemailer = require('nodemailer');
 
-// Setup Nodemailer transporter
+// Setup Nodemailer transporter dynamically from environment variables
+const smtpPort = parseInt(process.env.SMTP_PORT || '465');
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-  port: process.env.SMTP_PORT || 587,
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: smtpPort,
+  secure: smtpPort === 465, // true for port 465 (SSL), false for 587 (STARTTLS)
   auth: {
-    user: process.env.SMTP_USER || 'campushive.auth@gmail.com',
-    pass: process.env.SMTP_PASS || 'demo_pass_key'
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || ''
   }
 });
 
@@ -226,7 +228,7 @@ router.post('/forgot-password', async (req, res) => {
     // Try sending email via Nodemailer
     try {
       await transporter.sendMail({
-        from: '"CampusHive Security" <no-reply@campushive.com>',
+        from: `"CampusHive Security" <${process.env.SMTP_USER || 'no-reply@campushive.com'}>`,
         to: user.email,
         subject: 'CampusHive Password Reset Code',
         html: `

@@ -110,3 +110,63 @@
 ---
 
 *Updated: August 3, 2026 — Ready to tackle one by one!*
+
+
+
+
+
+
+
+
+
+
+Here is the complete step-by-step guide to set up your environment variables on Render and configure real SMTP email credentials.
+
+Part 1: How to Add Environment Variables in Render
+Go to your Render Dashboard.
+Click on your Web Service (campushive-backend or Only_student).
+In the left-hand sidebar menu, click on Environment.
+Scroll to the Environment Variables section.
+Click Add Environment Variable for each key-value pair below:
+Key	Recommended Value	Explanation
+NODE_ENV	production	Enables secure cookies, disables dev bypasses
+ADMIN_PASSWORD	(e.g. HiveAdmin#2026!SecureKey)	Strong password for your Web Admin portal
+SMTP_HOST	smtp.gmail.com	SMTP Server (if using Gmail)
+SMTP_PORT	465	SSL Port for SMTP
+SMTP_USER	your-email@gmail.com	Your sender email address
+SMTP_PASS	(16-character App Password)	Generated App Password (see Part 2 below)
+Click Save Changes. Render will automatically redeploy your server with the new environment variables!
+Part 2: How to Get Real Gmail SMTP Credentials (Free)
+If you want password reset OTPs to actually land in student inboxes, use Gmail App Password (Free & takes 2 minutes):
+
+Step 1: Turn on 2-Step Verification on Gmail
+Go to your Google Account Security Page.
+Under "How you sign in to Google", ensure 2-Step Verification is turned ON.
+Step 2: Generate an App Password
+In the search bar at the top of your Google Account page, search for App Passwords.
+Or go directly to: myaccount.google.com/apppasswords.
+Type an app name (e.g. CampusHive Backend) → Click Create.
+Google will display a 16-character code (e.g., abcd efgh ijkl mnop).
+Copy this 16-character code (remove the spaces).
+Step 3: Paste into Render Environment Variables
+SMTP_HOST = smtp.gmail.com
+SMTP_PORT = 465
+SMTP_USER = your-campus-email@gmail.com
+SMTP_PASS = abcdefghijklmnop (the 16-char code without spaces)
+Quick Checklist of All Render Environment Variables
+Make sure your final Render Environment panel includes all of these:
+
+env
+NODE_ENV=production
+JWT_SECRET=campushive_super_secret_security_key_2026_xyz
+DATABASE_URL=postgresql://postgres:v%40Tr4h%26E2.!6a,e@db.pyjrrapjcfwzqyfriopt.supabase.co:5432/postgres
+DIRECT_URL=postgresql://postgres:v%40Tr4h%26E2.!6a,e@db.pyjrrapjcfwzqyfriopt.supabase.co:5432/postgres
+SUPABASE_URL=https://pyjrrapjcfwzqyfriopt.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1Ni...
+RAZORPAY_KEY_ID=rzp_test_TIFYZadVtRMgSB
+RAZORPAY_KEY_SECRET=OhmeQFjPxkg95KZmCejvGsC1
+ADMIN_PASSWORD=YourStrongPasswordHere!
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=abcdefghijklmnop

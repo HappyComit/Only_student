@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "onlyStudents",
+    "slug": "onlystudents",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "onlystudents",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#4F46E5"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.onlystudents.app"
+    },
+    "android": {
+      "package": "com.onlystudents.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

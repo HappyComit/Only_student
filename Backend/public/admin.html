@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OnlyStudents — Master Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --border: #E2E8F0;
+      --primary: #2563EB;
+      --primary-light: #DBEAFE;
+      --primary-dark: #1E40AF;
+      --text: #0F172A;
+      --text-muted: #64748B;
+      --success: #10B981;
+      --success-light: #D1FAE5;
+      --warning: #F59E0B;
+      --warning-light: #FEF3C7;
+      --danger: #EF4444;
+      --danger-light: #FEE2E2;
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0B0F19;
+      --card-bg: #151C2C;
+      --border: #232D42;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --primary-light: #1E3A8A;
+      --danger-light: #451A1A;
+      --success-light: #064E3B;
+      --warning-light: #451A03;
+    }
+
+    [data-theme="dark"] header {
+      background: #151C2C;
+      border-color: #232D42;
+    }
+
+    [data-theme="dark"] .hero-card {
+      background: linear-gradient(135deg, #151C2C 0%, #0B0F19 100%);
+      border-color: #232D42;
+    }
+
+    [data-theme="dark"] .metric-pill {
+      background: rgba(21, 28, 44, 0.9);
+      border-color: rgba(35, 45, 66, 0.8);
+    }
+
+    [data-theme="dark"] .chip {
+      background: #151C2C;
+      color: #94A3B8;
+      border-color: #232D42;
+    }
+
+    [data-theme="dark"] th {
+      background: #0B0F19;
+    }
+
+    [data-theme="dark"] tr:hover td {
+      background: #0B0F19;
+    }
+
+    [data-theme="dark"] .modal-card {
+      background: #151C2C;
+      border: 1px solid #232D42;
+    }
+
+    [data-theme="dark"] .input-box {
+      background: #0B0F19;
+      border-color: #232D42;
+      color: white;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navbar */
+    header {
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      background: linear-gradient(135deg, #2563EB 0%, #4F46E5 100%);
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    .brand-text h1 {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      color: var(--text);
+    }
+
+    .brand-text p {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: var(--danger-light);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+    .btn-danger:hover {
+      background: #FCA5A5;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 24px;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* Hero Card (Matches Mobile App Profile Hero) */
+    .hero-card {
+      background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+      border: 1px solid #BFDBFE;
+      border-radius: 24px;
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 28px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .hero-orb-a {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 999px;
+      background: var(--primary);
+      top: -80px;
+      right: -40px;
+      opacity: 0.15;
+    }
+
+    .hero-orb-b {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 999px;
+      background: #4F46E5;
+      bottom: -40px;
+      left: -30px;
+      opacity: 0.12;
+    }
+
+    .hero-eyebrow {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--primary-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 6px;
+    }
+
+    .hero-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .hero-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      max-width: 600px;
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .metric-pill {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .metric-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .metric-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+
+    .metric-lbl {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Navigation Filter Chips */
+    .filter-chips {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .chip {
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .chip.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    /* Cards & Tables */
+    .card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: #F8FAFC;
+      color: var(--text-muted);
+      padding: 14px 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: #F8FAFC;
+    }
+
+    .user-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Status Pills */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .status-in-progress {
+      background: var(--success-light);
+      color: #059669;
+    }
+
+    .status-declined {
+      background: var(--danger-light);
+      color: #DC2626;
+    }
+
+    .status-pending {
+      background: var(--warning-light);
+      color: #D97706;
+    }
+
+    .status-completed {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-card {
+      background: #FFFFFF;
+      border-radius: 24px;
+      padding: 36px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+    }
+
+    .modal-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #2563EB 0%, #4F46E5 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 16px auto;
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+    }
+
+    .modal-card h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .modal-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .input-box {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #F8FAFC;
+      font-size: 15px;
+      outline: none;
+      margin-bottom: 16px;
+      transition: all 0.2s;
+    }
+
+    .input-box:focus {
+      border-color: var(--primary);
+      background: #FFFFFF;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Password Authentication Modal -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-icon">🐝</div>
+      <h2>Developer Control Portal</h2>
+      <p>Enter Master Password to access platform data and moderation controls.</p>
+      <form id="loginForm">
+        <input type="password" id="adminPassword" class="input-box" placeholder="Master Admin Password" required autofocus />
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 14px;">Access Developer Control</button>
+      </form>
+      <div id="loginError" style="color: var(--danger); font-size: 13px; font-weight: 700; margin-top: 14px; display: none;">Invalid Master Password</div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🎓</div>
+      <div class="brand-text">
+        <h1>OnlyStudents Admin</h1>
+        <p>Master Developer Control Center</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn" id="themeBtn" onclick="toggleTheme()" style="background: var(--card-bg); border: 1px solid var(--border); color: var(--text); box-shadow: var(--shadow-sm);">
+        🌙 Dark Mode
+      </button>
+      <button class="btn btn-primary" onclick="loadAdminStats()">
+        🔄 Live Refresh
+      </button>
+    </div>
+  </header>
+
+  <!-- Container -->
+  <div class="container">
+    
+    <!-- Hero Card (Matching Mobile App Aesthetic) -->
+    <div class="hero-card">
+      <div class="hero-orb-a"></div>
+      <div class="hero-orb-b"></div>
+
+      <div class="hero-eyebrow">DEVELOPER OVERVIEW</div>
+      <div class="hero-title">OnlyStudents Platform Dashboard</div>
+      <div class="hero-subtitle">Real-time statistics, student user directory, service listings moderation, and live order tracking.</div>
+
+      <!-- Metrics Grid -->
+      <div class="metrics-grid">
+        <div class="metric-pill">
+          <div class="metric-icon-wrap" style="background: #DBEAFE; color: #2563EB;">👥</div>
+          <div>
+            <div class="metric-val" id="statUsers">0</div>
+            <div class="metric-lbl">Registered Students</div>
+          </div>
+        </div>
+
+        <div class="metric-pill">
+          <div class="metric-icon-wrap" style="background: #F3E8FF; color: #7C3AED;">🛠️</div>
+          <div>
+            <div class="metric-val" id="statGigs">0</div>
+            <div class="metric-lbl">Active Services Posted</div>
+          </div>
+        </div>
+
+        <div class="metric-pill">
+          <div class="metric-icon-wrap" style="background: #D1FAE5; color: #10B981;">⚡</div>
+          <div>
+            <div class="metric-val" id="statInProgress">0</div>
+            <div class="metric-lbl">Jobs In Progress</div>
+          </div>
+        </div>
+
+        <div class="metric-pill">
+          <div class="metric-icon-wrap" style="background: #FEF3C7; color: #D97706;">💰</div>
+          <div>
+            <div class="metric-val" id="statRevenue">₹0</div>
+            <div class="metric-lbl">Platform ₹6 Booking Fees</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Chips (Matching Mobile App Navigation) -->
+    <div class="filter-chips">
+      <button class="chip active" onclick="switchTab('usersTab', this)">👥 Registered Students</button>
+      <button class="chip" onclick="switchTab('gigsTab', this)">🛠️ Service Listings</button>
+      <button class="chip" onclick="switchTab('ordersTab', this)">⚡ Live Orders Tracker</button>
+    </div>
+
+    <!-- Tab 1: Users -->
+    <div id="usersTab" class="tab-content">
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Student User</th>
+              <th>Email Address</th>
+              <th>Account Role</th>
+              <th>University</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Loading student users...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 2: Gigs -->
+    <div id="gigsTab" class="tab-content" style="display: none;">
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Service Title</th>
+              <th>Category</th>
+              <th>Freelancer</th>
+              <th>Price</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="gigsTableBody">
+            <tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Loading active service listings...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 3: Orders -->
+    <div id="ordersTab" class="tab-content" style="display: none;">
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Service</th>
+              <th>Buyer</th>
+              <th>Seller</th>
+              <th>Amount</th>
+              <th>Live Status</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody">
+            <tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Loading live order tracking...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let adminToken = localStorage.getItem('campus_admin_token');
+
+    if (adminToken) {
+      document.getElementById('loginModal').style.display = 'none';
+      loadAdminStats();
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = document.getElementById('adminPassword').value;
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('campus_admin_token', data.token);
+          document.getElementById('loginModal').style.display = 'none';
+          loadAdminStats();
+        } else {
+          document.getElementById('loginError').style.display = 'block';
+        }
+      } catch (err) {
+        document.getElementById('loginError').style.display = 'block';
+      }
+    });
+
+    async function loadAdminStats() {
+      try {
+        const res = await fetch('/api/admin/stats');
+        const data = await res.json();
+        if (data && data.metrics) {
+          document.getElementById('statUsers').innerText = data.metrics.totalUsers;
+          document.getElementById('statGigs').innerText = data.metrics.totalGigs;
+          document.getElementById('statInProgress').innerText = data.metrics.inProgressOrders;
+          document.getElementById('statRevenue').innerText = '₹' + (data.metrics.bookingFeeRevenue || 0);
+
+          renderUsers(data.users || []);
+          renderGigs(data.gigs || []);
+          renderOrders(data.orders || []);
+        }
+      } catch (err) {
+        console.error("Failed to load admin stats:", err);
+      }
+    }
+
+    function renderUsers(users) {
+      const tbody = document.getElementById('usersTableBody');
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No users found.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = users.map(u => {
+        const initial = (u.name || u.username || 'U')[0].toUpperCase();
+        return `
+          <tr>
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar">${initial}</div>
+                <div>
+                  <div style="font-weight: 700;">${u.name || u.username}</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">@${u.username}</div>
+                </div>
+              </div>
+            </td>
+            <td>${u.email}</td>
+            <td><span class="status-pill ${u.isSeller ? 'status-completed' : 'status-pending'}">${u.isSeller ? 'Freelancer' : 'Client'}</span></td>
+            <td>${u.university || 'Chandigarh University'}</td>
+            <td>
+              <button class="btn btn-danger" onclick="deleteUser('${u.id}')">Delete User</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderGigs(gigs) {
+      const tbody = document.getElementById('gigsTableBody');
+      if (gigs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No services posted yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = gigs.map(g => `
+        <tr>
+          <td><strong>${g.title}</strong></td>
+          <td><span class="status-pill status-completed">${g.category || 'General'}</span></td>
+          <td>${g.user?.name || g.user?.username || 'Freelancer'}</td>
+          <td><strong style="color: var(--primary);">₹${g.price}</strong></td>
+          <td>
+            <button class="btn btn-danger" onclick="deleteGig('${g.id}')">Moderate / Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderOrders(orders) {
+      const tbody = document.getElementById('ordersTableBody');
+      if (orders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">No order transactions yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = orders.map(o => {
+        let badgeClass = 'status-pending';
+        if (o.status === 'IN_PROGRESS') badgeClass = 'status-in-progress';
+        if (o.status === 'COMPLETED') badgeClass = 'status-completed';
+        if (o.status === 'DECLINED') badgeClass = 'status-declined';
+
+        return `
+          <tr>
+            <td><code style="font-size: 12px; background: #F1F5F9; padding: 4px 8px; border-radius: 6px;">${o.id.substring(0, 8)}...</code></td>
+            <td><strong>${o.gig?.title || 'Service'}</strong></td>
+            <td>${o.buyer?.name || o.buyer?.username}</td>
+            <td>${o.seller?.name || o.seller?.username}</td>
+            <td><strong>₹${o.price}</strong></td>
+            <td><span class="status-pill ${badgeClass}">${o.status}</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function deleteGig(id) {
+      if (!confirm("Are you sure you want to delete/moderate this gig listing?")) return;
+      try {
+        await fetch('/api/admin/gigs/' + id, { method: 'DELETE' });
+        loadAdminStats();
+      } catch (err) { alert('Failed to delete gig.'); }
+    }
+
+    async function deleteUser(id) {
+      if (!confirm("Are you sure you want to delete this user account?")) return;
+      try {
+        await fetch('/api/admin/users/' + id, { method: 'DELETE' });
+        loadAdminStats();
+      } catch (err) { alert('Failed to delete user.'); }
+    }
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.chip').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).style.display = 'block';
+      btn.classList.add('active');
+    }
+
+    // Theme Toggle Functionality
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('admin_theme', next);
+      updateThemeBtn(next);
+    }
+
+    function updateThemeBtn(theme) {
+      const btn = document.getElementById('themeBtn');
+      if (btn) {
+        btn.innerHTML = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+      }
+    }
+
+    // Load saved theme preference on startup
+    const savedTheme = localStorage.getItem('admin_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeBtn(savedTheme);
+
+    // Auto-refresh stats every 10 seconds
+    setInterval(loadAdminStats, 10000);
+  </script>
+</body>
+</html>

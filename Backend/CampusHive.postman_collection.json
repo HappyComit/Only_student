@@ -1,0 +1,582 @@
+{
+	"info": {
+		"_postman_id": "8b843329-8736-4d76-9051-a20efb06f7aa",
+		"name": "CampusHive API",
+		"description": "Collection of endpoints to test the CampusHive/onlyStudents SQLite-Express backend including registration, login, profile updates, gig listings, orders state-machine payments, and chat messaging.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register Buyer Account",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"buyer@university.edu\",\n  \"username\": \"buyer_student\",\n  \"password\": \"Password123\",\n  \"name\": \"Utkarsh Kumar Tiwari\",\n  \"university\": \"Chandigarh University\",\n  \"year\": \"2nd Year\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register Seller Account",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"seller@university.edu\",\n  \"username\": \"seller_student\",\n  \"password\": \"Password123\",\n  \"isSeller\": true,\n  \"upiId\": \"seller@okaxis\",\n  \"bio\": \"Electrical and React Native student developer.\",\n  \"name\": \"Arjun Mehta\",\n  \"university\": \"Chandigarh University\",\n  \"year\": \"2nd Year\",\n  \"skills\": \"Premiere Pro, After Effects, DaVinci Resolve, Motion Graphics\",\n  \"responseTime\": \"~2 hrs\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.token) {",
+									"    pm.environment.set(\"authToken\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"buyer@university.edu\",\n  \"password\": \"Password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Toggle isSeller & Update UPI",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"isSeller\": true,\n  \"upiId\": \"new_upi_address@okicici\",\n  \"bio\": \"Updated bio description here.\",\n  \"name\": \"Utkarsh K. Tiwari\",\n  \"university\": \"Chandigarh University\",\n  \"skills\": \"React Native, Node.js, Express, Prisma\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Gigs",
+			"item": [
+				{
+					"name": "Post a Gig",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.gig && jsonData.gig.id) {",
+									"    pm.environment.set(\"lastGigId\", jsonData.gig.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Custom Arduino Coding & Assembly\",\n  \"description\": \"I will design and write Arduino or Raspberry Pi firmware for your micro-controller college project.\",\n  \"price\": 1200,\n  \"deliveryDays\": 5,\n  \"category\": \"dev\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/gigs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"gigs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch Gigs Feed (Search/Filter)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/gigs?category=dev",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"gigs"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": "dev",
+									"description": "Filter by gig category (dev, design, video, etc.)"
+								},
+								{
+									"key": "search",
+									"value": "Arduino",
+									"description": "Optional keyword search filter",
+									"disabled": true
+								},
+								{
+									"key": "sellerId",
+									"value": "",
+									"description": "Optional filter by seller ID",
+									"disabled": true
+								},
+								{
+									"key": "featured",
+									"value": "true",
+									"description": "Optional filter for featured gigs only",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Gig Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/gigs/{{lastGigId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"gigs",
+								"{{lastGigId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Purchase Gig (Create Order)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.order && jsonData.order.id) {",
+									"    pm.environment.set(\"lastOrderId\", jsonData.order.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"gigId\": \"{{lastGigId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pay ₹9 Booking Fee",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bookingTransactionId\": \"TXN_998877_ADMIN_FEE\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{lastOrderId}}/pay-booking",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"{{lastOrderId}}",
+								"pay-booking"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deliver Gig Work",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{lastOrderId}}/deliver",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"{{lastOrderId}}",
+								"deliver"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pay Final Gig Price to Seller",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"gigTransactionId\": \"TXN_554433_SELLER_PAY\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{lastOrderId}}/pay-gig",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"{{lastOrderId}}",
+								"pay-gig"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch Buyer Orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/buyer",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"buyer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch Seller Orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/seller",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"seller"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Order Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{lastOrderId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"{{lastOrderId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Chat Messages",
+			"item": [
+				{
+					"name": "Send Chat Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"receiverId\": \"REPLACE_WITH_SELLER_USER_ID\",\n  \"content\": \"Hey, let me know when you can start working on the Arduino code!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/messages",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"messages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chat History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/messages/REPLACE_WITH_PARTNER_USER_ID",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"messages",
+								"REPLACE_WITH_PARTNER_USER_ID"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000/api",
+			"type": "string"
+		}
+	]
+}

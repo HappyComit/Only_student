@@ -1,0 +1,155 @@
+// Tells Prisma to use a local SQLite database that saves to a file named 'dev.db'
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Tells Prisma to generate the JavaScript/TypeScript client library
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// 1. USER MODEL (Student Profiles)
+// ==========================================
+model User {
+  id           String   @id @default(uuid()) // Unique ID generated automatically
+  email        String   @unique             // User's email, must be unique
+  username     String   @unique             // User's username, must be unique
+  passwordHash String                       // Securely hashed password
+  isSeller     Boolean  @default(false)     // True if user posts services (freelancer), False if buyer
+  isAdmin      Boolean  @default(false)     // True if user is a platform administrator
+  upiId        String?                      // UPI Address of the seller (e.g., student@okaxis) to receive payments
+  bio          String?                      // Optional brief description about the user
+  avatarUrl    String?                      // Optional link to profile picture
+  createdAt    DateTime @default(now())     // Timestamp when the user signed up
+
+  // New fields for frontend alignment:
+  name         String?                      // Full name (e.g., "Arjun Mehta")
+  university   String?                      // University name (e.g., "Chandigarh University")
+  department   String?                      // Department/Course name (e.g., "Computer Science & Engineering")
+  year         String?                      // Student's academic year (e.g., "2nd Year")
+  skills       String?                      // Comma-separated list of skills (e.g., "Figma, React Native")
+  responseTime String?                      // Average reply time (e.g., "~2 hrs")
+  isVerified   Boolean  @default(false)     // True if the student is a verified developer/designer
+  resetOtp     String?                      // 6-digit password reset OTP
+  resetOtpExpires DateTime?                 // Expiration timestamp for reset OTP
+
+  // Database Relationships:
+  gigs           Gig[]     @relation("SellerGigs")      // Gigs created by this user (if seller)
+  ordersAsBuyer  Order[]   @relation("BuyerOrders")     // Orders this user placed as a buyer
+  ordersAsSeller Order[]   @relation("SellerOrders")    // Orders this user is delivering as a seller
+  messagesSent   Message[] @relation("SentMessages")    // Chat messages sent by this user
+  messagesRecv   Message[] @relation("ReceivedMessages")// Chat messages received by this user
+  reviewsGiven   Review[]  @relation("Reviewer")
+  reviewsReceived Review[] @relation("Reviewee")
+  notifications   Notification[] @relation("UserNotifications")
+}
+
+// ==========================================
+// 2. GIG MODEL (Freelance Services)
+// ==========================================
+model Gig {
+  id           String   @id @default(uuid()) // Unique ID for each gig listing
+  title        String                       // Title of the service (e.g., "Web Development")
+  description  String                       // Deep details about what the seller offers
+  price        Float                        // The cost of the service
+  deliveryDays Int                          // How many days the seller needs to complete the job
+  imageUrl     String?                      // Optional photo of the gig
+  sellerId     String                       // Links the gig to the user who created it
+  isFeatured   Boolean  @default(false)     // True if the seller paid ₹19 to put it at the top of the feed
+  featuredUntil DateTime?                   // When the featured status expires
+  createdAt    DateTime @default(now())     // Timestamp when gig was posted
+
+  // New fields for frontend alignment:
+  category     String                       // Gig category (e.g., "dev", "design", "video", "photo")
+
+  // Database Relationships:
+  seller       User     @relation("SellerGigs", fields: [sellerId], references: [id]) // Connects to the User model
+  orders       Order[]                                                               // All orders placed for this gig
+  reviews      Review[]
+}
+
+// ==========================================
+// 3. ORDER MODEL (Tracks Purchase State)
+// ==========================================
+model Order {
+  id                    String   @id @default(uuid())  // Unique ID for each order transaction
+  gigId                 String                        // The gig being purchased
+  buyerId               String                        // The user buying the gig
+  sellerId              String                        // The user selling the gig
+  price                 Float                         // The agreed price of the gig
+  bookingFee            Float    @default(6.0)        // Platform booking fee (₹6)
+  
+  // Status state machine: PENDING -> IN_PROGRESS -> DELIVERED -> COMPLETED (or CANCELLED)
+  status                String   @default("PENDING") 
+  
+  bookingTransactionId  String?                       // The UPI reference number for the ₹9 booking fee
+  bookingFeePaid        Boolean  @default(false)      // Becomes true once the ₹9 admin payment is confirmed
+  
+  gigTransactionId      String?                       // The UPI reference number for the final gig price paid to seller
+  gigPricePaid          Boolean  @default(false)      // Becomes true once the buyer pays the seller and unlocks files
+  
+  deliveryDate          DateTime                      // Estimated date when work must be delivered
+  createdAt             DateTime @default(now())      // Timestamp when order was created
+
+  // Database Relationships:
+  gig          Gig      @relation(fields: [gigId], references: [id])
+  buyer        User     @relation("BuyerOrders", fields: [buyerId], references: [id])
+  seller       User     @relation("SellerOrders", fields: [sellerId], references: [id])
+  review       Review?
+}
+
+// ==========================================
+// 4. MESSAGE MODEL (Chat History)
+// ==========================================
+model Message {
+  id         String   @id @default(uuid()) // Unique ID for each chat message
+  senderId   String                        // User ID of the sender
+  receiverId String                        // User ID of the receiver
+  content    String                        // The actual text content
+  createdAt  DateTime @default(now())     // Timestamp when message was sent
+
+  // Database Relationships:
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+// ==========================================
+// 5. REVIEW MODEL (Seller Feedback)
+// ==========================================
+model Review {
+  id         String   @id @default(uuid())
+  orderId    String   @unique
+  gigId      String
+  reviewerId String
+  sellerId   String
+  rating     Int      // Star rating (1-5)
+  comment    String   // Feedback content
+  createdAt  DateTime @default(now())
+
+  // Database Relationships:
+  order      Order    @relation(fields: [orderId], references: [id])
+  gig        Gig      @relation(fields: [gigId], references: [id])
+  reviewer   User     @relation("Reviewer", fields: [reviewerId], references: [id])
+  seller     User     @relation("Reviewee", fields: [sellerId], references: [id])
+}
+
+// ==========================================
+// 6. NOTIFICATION MODEL (User Alerts)
+// ==========================================
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("GENERAL")
+  relatedId String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Database Relationships:
+  user User @relation("UserNotifications", fields: [userId], references: [id])
+}
+

@@ -1,0 +1,25 @@
+# Node modules
+node_modules/
+**/node_modules/
+
+# Environment files & secrets
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Expo & Build outputs
+.expo/
+dist/
+build/
+*.apk
+*.aab
+
+# Logs
+*.log
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

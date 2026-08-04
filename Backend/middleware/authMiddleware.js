@@ -21,7 +21,7 @@ const authenticateToken = (req, res, next) => {
 
   try {
     // 3. Verify the token using the secret key defined in our .env file
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'campushive_super_secret_security_key_2026_xyz');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // 4. Attach the decoded user data (ID, email, etc.) to the request object
     // This allows subsequent routes to know exactly who is making the API request

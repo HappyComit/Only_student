@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/prisma');
+const authenticateToken = require('../middleware/authMiddleware');
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
@@ -22,8 +22,14 @@ router.post('/login', (req, res) => {
  * @route   GET /api/admin/stats
  * @desc    Get real-time platform metrics and full management tables
  */
-router.get('/stats', async (req, res) => {
+router.get('/stats', authenticateToken, async (req, res) => {
   try {
+    // Admin role check
+    const requester = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!requester || !requester.isAdmin) {
+      return res.status(403).json({ error: 'Access denied. Admin role required.' });
+    }
+
     const totalUsers = await prisma.user.count();
     const totalGigs = await prisma.gig.count();
     const totalOrders = await prisma.order.count();
@@ -109,8 +115,14 @@ router.get('/stats', async (req, res) => {
  * @route   DELETE /api/admin/gigs/:id
  * @desc    Moderate/delete a gig listing
  */
-router.delete('/gigs/:id', async (req, res) => {
+router.delete('/gigs/:id', authenticateToken, async (req, res) => {
   try {
+    // Admin role check
+    const requester = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!requester || !requester.isAdmin) {
+      return res.status(403).json({ error: 'Access denied. Admin role required.' });
+    }
+
     const { id } = req.params;
     await prisma.gig.delete({ where: { id } });
     return res.json({ message: "Gig deleted successfully." });
@@ -124,8 +136,14 @@ router.delete('/gigs/:id', async (req, res) => {
  * @route   DELETE /api/admin/users/:id
  * @desc    Delete a user account
  */
-router.delete('/users/:id', async (req, res) => {
+router.delete('/users/:id', authenticateToken, async (req, res) => {
   try {
+    // Admin role check
+    const requester = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!requester || !requester.isAdmin) {
+      return res.status(403).json({ error: 'Access denied. Admin role required.' });
+    }
+
     const { id } = req.params;
     await prisma.user.delete({ where: { id } });
     return res.json({ message: "User account deleted successfully." });

@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
 const { createNotification } = require('./notifications');
-
-const prisma = new PrismaClient();
 
 /**
  * @route   POST /api/orders
@@ -348,11 +346,6 @@ router.post('/:id/pay-gig', authenticateToken, async (req, res) => {
       message: `${order.buyer?.name || order.buyer?.username || 'Buyer'} completed payment for '${order.gig?.title}'. The project is officially completed!`,
       type: "ORDER_COMPLETED",
       relatedId: order.id
-    });
-
-    return res.json({
-      message: "Final payment confirmed! The project is officially COMPLETED.",
-      order: updatedOrder
     });
 
     return res.json({

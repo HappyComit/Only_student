@@ -7,6 +7,7 @@ node_modules/
 .env.*
 **/.env
 **/.env.*
+ADMIN_CREDENTIALS.md
 
 # Expo & Build outputs
 .expo/
@@ -23,3 +24,6 @@ build/
 Thumbs.db
 .vscode/
 .idea/
+
+# macOS artifacts
+__MACOSX/

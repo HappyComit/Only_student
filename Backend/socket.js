@@ -34,7 +34,7 @@ function initSocket(httpServer) {
     try {
       const decoded = jwt.verify(
         token,
-        process.env.JWT_SECRET || 'campushive_super_secret_security_key_2026_xyz'
+        process.env.JWT_SECRET
       );
       // Attach user data to the socket for use in event handlers
       socket.user = decoded;

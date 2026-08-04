@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
 const { getIO } = require('../socket');
-
-const prisma = new PrismaClient();
 
 /**
  * @route   POST /api/messages

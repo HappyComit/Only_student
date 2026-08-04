@@ -2,13 +2,11 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
 
-// Initialize Prisma client to talk to the SQLite database
-const prisma = new PrismaClient();
-
-const JWT_SECRET = process.env.JWT_SECRET || 'campushive_super_secret_security_key_2026_xyz';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('FATAL: JWT_SECRET environment variable is not set');
 
 /**
  * @route   POST /api/auth/register
@@ -245,8 +243,7 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     return res.json({
-      message: "Reset code generated and sent to email!",
-      devOtp: otp
+      message: "Reset code generated and sent to email!"
     });
 
   } catch (error) {

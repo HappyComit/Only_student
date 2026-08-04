@@ -2,10 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
-
-const prisma = new PrismaClient();
 
 // Initialize Razorpay client with environment credentials
 const razorpay = new Razorpay({
@@ -149,7 +147,7 @@ router.post('/razorpay/verify-signature', authenticateToken, async (req, res) =>
     }
 
     // Dev fallback if using mock payment ID on emulator or test keys
-    if (!isValid && razorpay_payment_id.startsWith('pay_mock_') || secret === 'placeholder_secret') {
+    if (!isValid && (razorpay_payment_id.startsWith('pay_mock_') || secret === 'placeholder_secret') && process.env.NODE_ENV !== 'production') {
       console.log("ℹ️ Dev Mode / Simulated Razorpay verification accepted.");
       isValid = true;
     }

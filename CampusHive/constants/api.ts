@@ -1,12 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const DEV_URL = typeof window !== 'undefined' && window.location?.hostname === 'localhost'
-  ? 'http://localhost:5000/api'
-  : 'http://10.208.44.27:5000/api';
-// Hosted production cloud server domain on Render
-const PROD_URL = 'https://only-student.onrender.com/api'; 
+// Production cloud server domain on Render
+const PROD_URL = 'https://only-student.onrender.com/api';
+// Local development server — use your machine's Wi-Fi IP so the Expo Go
+// app on your phone (same network) can reach the backend.
+const DEV_URL = 'http://10.199.60.27:5000/api';
 
-export const API_BASE_URL = __DEV__ ? DEV_URL : PROD_URL;
+// Switch between local dev and cloud:
+// • DEV_URL  → for local development (backend on your machine)
+// • PROD_URL → for cloud/production (Render deployment)
+export const API_BASE_URL = PROD_URL;
 
 /**
  * Saves the authentication JWT token locally on the device.
@@ -85,8 +88,8 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * timeout guards, and response parsing.
  */
 export async function apiFetch<T = any>(
-  path: string, 
-  options: RequestInit = {}, 
+  path: string,
+  options: RequestInit = {},
   retries: number = 2
 ): Promise<T> {
   const token = await getToken();
@@ -106,9 +109,9 @@ export async function apiFetch<T = any>(
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      // 15-second timeout guard to prevent requests hanging indefinitely on slow mobile networks
+      // 35-second timeout guard to accommodate Render free tier cold starts
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const timeoutId = setTimeout(() => controller.abort(), 35000);
 
       const response = await fetch(`${API_BASE_URL}${path}`, {
         ...config,
@@ -168,7 +171,7 @@ export async function apiFetch<T = any>(
  * Returns the public HTTPS URL of the uploaded image on Supabase.
  */
 export async function uploadImage(
-  localUri: string, 
+  localUri: string,
   bucket: 'avatars' | 'gig-images' | 'events' = 'avatars'
 ): Promise<string> {
   const token = await getToken();

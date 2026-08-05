@@ -23,6 +23,9 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust reverse proxy headers (required on Render/Cloudflare for rate limiting)
+app.set('trust proxy', 1);
+
 // ==========================================
 // MIDDLEWARES
 // ==========================================
@@ -59,10 +62,10 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 // RATE LIMITING
 // ==========================================
 
-// Global API Rate Limiter — 100 requests per 15 minutes per IP
+// Global API Rate Limiter — 300 requests per 15 minutes per IP
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,   // 15 minutes
-  max: 100,                     // Limit each IP to 100 requests per window
+  max: 300,                    // Limit each IP to 300 requests per window
   standardHeaders: true,        // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false,         // Disable deprecated `X-RateLimit-*` headers
   message: {
@@ -70,10 +73,10 @@ const globalLimiter = rateLimit({
   },
 });
 
-// Strict Auth Limiter — 10 requests per 15 minutes per IP (login, signup, OTP)
+// Auth Limiter — 50 requests per 15 minutes per IP (login, signup, OTP)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,   // 15 minutes
-  max: 10,                      // 10 attempts per window
+  max: 50,                     // 50 attempts per window
   standardHeaders: true,
   legacyHeaders: false,
   message: {

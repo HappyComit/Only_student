@@ -88,22 +88,21 @@ app.use('/api/auth', authLimiter);
 // ROUTES
 // ==========================================
 
+// Dedicated Health Check route for Cron / Keep-Alive services (e.g. Cron-Job.org, UptimeRobot)
+app.get(['/health', '/api/health'], (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Welcome/Health-Check route
 app.get('/', (req, res) => {
   res.json({ 
     message: "Welcome to the CampusHive API!",
     status: "Healthy",
     time: new Date()
-  });
-});
-
-// Dedicated Health-Check endpoints (for cron-job.org / UptimeRobot to prevent Render free-tier sleep)
-app.get(['/health', '/api/health'], (req, res) => {
-  res.status(200).json({
-    status: "ok",
-    service: "CampusHive API",
-    uptime: Math.floor(process.uptime()),
-    timestamp: new Date().toISOString()
   });
 });
 

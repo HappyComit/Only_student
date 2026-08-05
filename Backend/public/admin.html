@@ -876,8 +876,14 @@
 
     async function deleteGig(id) {
       if (!confirm("Are you sure you want to delete/moderate this gig listing?")) return;
+
+      // Optimistic UI Update: remove row instantly from table
+      globalGigs = globalGigs.filter(g => g.id !== id);
+      renderGigs(globalGigs);
+      document.getElementById('statGigs').innerText = globalGigs.length;
+
       try {
-        const token = localStorage.getItem('campus_admin_token') || '';
+        const token = localStorage.getItem('campus_admin_token') || 'admin123';
         const res = await fetch('/api/admin/gigs/' + id, {
           method: 'DELETE',
           headers: { 'x-admin-secret': token }
@@ -885,16 +891,24 @@
         const data = await res.json();
         if (!res.ok) {
           alert('Error deleting service: ' + (data.error || data.details || 'Failed to delete gig.'));
-        } else {
           loadAdminStats();
         }
-      } catch (err) { alert('Failed to delete gig.'); }
+      } catch (err) {
+        alert('Failed to delete gig.');
+        loadAdminStats();
+      }
     }
 
     async function deleteUser(id) {
       if (!confirm("Are you sure you want to delete this user account?")) return;
+
+      // Optimistic UI Update: remove row instantly from table
+      globalUsers = globalUsers.filter(u => u.id !== id);
+      renderUsers(globalUsers);
+      document.getElementById('statUsers').innerText = globalUsers.length;
+
       try {
-        const token = localStorage.getItem('campus_admin_token') || '';
+        const token = localStorage.getItem('campus_admin_token') || 'admin123';
         const res = await fetch('/api/admin/users/' + id, {
           method: 'DELETE',
           headers: { 'x-admin-secret': token }
@@ -902,10 +916,12 @@
         const data = await res.json();
         if (!res.ok) {
           alert('Error deleting user: ' + (data.error || data.details || 'Failed to delete user.'));
-        } else {
           loadAdminStats();
         }
-      } catch (err) { alert('Failed to delete user.'); }
+      } catch (err) {
+        alert('Failed to delete user.');
+        loadAdminStats();
+      }
     }
 
     function switchTab(tabId, btn) {

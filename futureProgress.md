@@ -48,14 +48,10 @@
 - **Files:** `CampusHive/components/ui/ErrorBoundary.tsx`, `CampusHive/app/_layout.tsx`
 - **Solution:** Created reusable `ErrorBoundary` component with fallback UI ("Oops! Something went wrong — Tap to Retry"). Wrapped the root layout in `<ErrorBoundary>`.
 
-### 8. [ ] Production Cloud Deployment
+### 8. [x] Production Cloud Deployment (COMPLETED)
 - **Problem:** Backend runs on `localhost:5000` only. Frontend API URL points to local IP `10.208.44.27:5000`.
 - **Files:** `Backend/` (whole server), `CampusHive/constants/api.ts`
-- **Fix:**
-  - Push backend to **Render.com** or **Railway.app**
-  - Update `PROD_URL` in `api.ts` with live URL
-  - Run `npx prisma db push` against production Supabase DB
-  - Build APK with `npx eas build -p android --profile preview`
+- **Solution:** Successfully deployed live to Render at `https://only-student.onrender.com`. Updated `PROD_URL` in `CampusHive/constants/api.ts` and configured all 13 environment variables (Supabase DB, Storage, Razorpay, Gmail SMTP).
 
 ### 9. [ ] Expo EAS APK Build
 - **Problem:** No standalone APK exists yet for campus distribution.

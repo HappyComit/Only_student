@@ -3,8 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const DEV_URL = typeof window !== 'undefined' && window.location?.hostname === 'localhost'
   ? 'http://localhost:5000/api'
   : 'http://10.208.44.27:5000/api';
-// Replace this with your hosted cloud server domain (e.g. 'https://campushive-backend.onrender.com/api')
-const PROD_URL = 'https://campushive-backend.onrender.com/api'; 
+// Hosted production cloud server domain on Render
+const PROD_URL = 'https://only-student.onrender.com/api'; 
 
 export const API_BASE_URL = __DEV__ ? DEV_URL : PROD_URL;
 

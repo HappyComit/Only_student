@@ -97,6 +97,16 @@ app.get('/', (req, res) => {
   });
 });
 
+// Dedicated Health-Check endpoints (for cron-job.org / UptimeRobot to prevent Render free-tier sleep)
+app.get(['/health', '/api/health'], (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    service: "CampusHive API",
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Mount our structured API endpoints under '/api' prefix
 app.use('/api/auth', authRoutes);
 app.use('/api/gigs', gigRoutes);

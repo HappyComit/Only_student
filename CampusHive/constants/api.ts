@@ -75,10 +75,20 @@ export const removeToken = async () => {
 };
 
 /**
- * Centralized fetch helper that handles request headers, authorization tokens,
- * JSON serialization, and responses.
+ * Helper delay function for exponential backoff
  */
-export async function apiFetch<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Centralized fetch helper that handles request headers, authorization tokens,
+ * automatic retry logic (with exponential backoff for network/5xx glitches),
+ * timeout guards, and response parsing.
+ */
+export async function apiFetch<T = any>(
+  path: string, 
+  options: RequestInit = {}, 
+  retries: number = 2
+): Promise<T> {
   const token = await getToken();
 
   const headers: HeadersInit = {
@@ -92,26 +102,64 @@ export async function apiFetch<T = any>(path: string, options: RequestInit = {})
     headers,
   };
 
-  try {
-    const response = await fetch(`${API_BASE_URL}${path}`, config);
+  let lastError: any = null;
 
-    // Check if the response is JSON or empty
-    const contentType = response.headers.get('content-type');
-    let data: any = {};
-    if (contentType && contentType.includes('application/json')) {
-      data = await response.json();
-    } else {
-      data = { text: await response.text() };
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      // 15-second timeout guard to prevent requests hanging indefinitely on slow mobile networks
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        ...config,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      // Parse JSON or text response
+      const contentType = response.headers.get('content-type');
+      let data: any = {};
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = { text: await response.text() };
+      }
+
+      if (!response.ok) {
+        const isServerError = response.status >= 500 && response.status < 600;
+        // Retry on 5xx server glitches if retries remain
+        if (isServerError && attempt < retries) {
+          console.warn(`⚠️ [API] Server ${response.status} error on ${path}. Retrying (${attempt + 1}/${retries})...`);
+          await delay(1000 * Math.pow(2, attempt)); // 1s, 2s backoff
+          continue;
+        }
+        throw new Error(data.error || `HTTP error! Status: ${response.status}`);
+      }
+
+      return data as T;
+    } catch (error: any) {
+      lastError = error;
+
+      // Handle aborted/timed-out requests or network drops
+      const isNetworkError = error.name === 'AbortError' || error.message?.includes('Network') || error.message?.includes('Failed to fetch');
+
+      if (isNetworkError && attempt < retries) {
+        console.warn(`⚠️ [API] Network error on ${path} (${error.message}). Retrying (${attempt + 1}/${retries})...`);
+        await delay(1000 * Math.pow(2, attempt)); // 1s, 2s backoff
+        continue;
+      }
+
+      // If no retries left or non-retryable error (e.g. 400 Bad Request)
+      if (isNetworkError) {
+        throw new Error('Network connection unavailable. Please check your internet connection and try again.');
+      }
+
+      throw error;
     }
-
-    if (!response.ok) {
-      throw new Error(data.error || `HTTP error! Status: ${response.status}`);
-    }
-
-    return data as T;
-  } catch (error: any) {
-    throw error;
   }
+
+  throw lastError || new Error('Network request failed.');
 }
 
 /**

@@ -87,11 +87,10 @@
 - **Files:** `.gitignore`, `Backend/.gitignore`
 - **Solution:** Added `.env`, `**/.env`, and `ADMIN_CREDENTIALS.md` to `.gitignore`. Removed sensitive credentials from git history and configured all 13 environment variables securely in Render's dashboard.
 
-### 15. [ ] Offline / Retry Support
-- **Problem:** If the user loses internet, API calls silently fail with no retry option.
-- **Files:** `CampusHive/constants/api.ts` (`apiFetch` function)
-- **Fix:** Add retry logic (1-2 retries with backoff) in `apiFetch`. Show a toast/banner when network is unavailable.
-
+### 15. [x] Offline / Retry Support (COMPLETED)
+- **Problem:** If the user loses internet or has a spotty network connection, API calls silently fail with no retry option.
+- **File:** `CampusHive/constants/api.ts` (`apiFetch` function)
+- **Solution:** Added automatic retry logic (up to 2 retries with 1s/2s exponential backoff for network drops and 5xx server errors), 15-second `AbortController` timeout guard, and friendly network error messages.
 
 ---
 
@@ -100,20 +99,10 @@
 | Priority | Total | Done | Remaining |
 |----------|-------|------|-----------|
 | 🔴 Must Fix | 4 | 4 | 0 |
-| 🟡 Should Fix | 5 | 2 | 3 |
-| 🟢 Polish | 6 | 3 | 3 |
-| **Total** | **15** | **9** | **6** |
+| 🟡 Should Fix | 5 | 3 | 2 |
+| 🟢 Polish | 6 | 5 | 1 |
+| **Total** | **15** | **12** | **3** |
 
 ---
 
-*Updated: August 3, 2026 — Ready to tackle one by one!*
-
-
-
-
-
-
-
-
-
-
+*Updated: August 5, 2026*

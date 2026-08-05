@@ -675,9 +675,21 @@
     async function loadAdminStats() {
       try {
         const token = localStorage.getItem('campus_admin_token') || '';
+        if (!token) {
+          document.getElementById('loginModal').style.display = 'flex';
+          return;
+        }
+
         const res = await fetch('/api/admin/stats', {
           headers: { 'x-admin-secret': token }
         });
+
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem('campus_admin_token');
+          document.getElementById('loginModal').style.display = 'flex';
+          return;
+        }
+
         const data = await res.json();
         if (data && data.metrics) {
           document.getElementById('statUsers').innerText = data.metrics.totalUsers;

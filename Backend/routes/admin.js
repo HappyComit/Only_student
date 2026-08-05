@@ -126,7 +126,7 @@ router.get('/stats', adminAuth, async (req, res) => {
     });
   } catch (error) {
     console.error("Admin Stats Error:", error);
-    return res.status(500).json({ error: "Failed to fetch admin stats." });
+    return res.status(500).json({ error: "Failed to fetch admin stats.", details: error.message });
   }
 });
 

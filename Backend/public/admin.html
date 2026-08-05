@@ -661,7 +661,10 @@
 
     async function loadAdminStats() {
       try {
-        const res = await fetch('/api/admin/stats');
+        const token = localStorage.getItem('campus_admin_token') || '';
+        const res = await fetch('/api/admin/stats', {
+          headers: { 'x-admin-secret': token }
+        });
         const data = await res.json();
         if (data && data.metrics) {
           document.getElementById('statUsers').innerText = data.metrics.totalUsers;
@@ -718,7 +721,7 @@
         <tr>
           <td><strong>${g.title}</strong></td>
           <td><span class="status-pill status-completed">${g.category || 'General'}</span></td>
-          <td>${g.user?.name || g.user?.username || 'Freelancer'}</td>
+          <td>${g.seller?.name || g.seller?.username || 'Freelancer'}</td>
           <td><strong style="color: var(--primary);">₹${g.price}</strong></td>
           <td>
             <button class="btn btn-danger" onclick="deleteGig('${g.id}')">Moderate / Delete</button>
@@ -755,7 +758,11 @@
     async function deleteGig(id) {
       if (!confirm("Are you sure you want to delete/moderate this gig listing?")) return;
       try {
-        await fetch('/api/admin/gigs/' + id, { method: 'DELETE' });
+        const token = localStorage.getItem('campus_admin_token') || '';
+        await fetch('/api/admin/gigs/' + id, {
+          method: 'DELETE',
+          headers: { 'x-admin-secret': token }
+        });
         loadAdminStats();
       } catch (err) { alert('Failed to delete gig.'); }
     }
@@ -763,7 +770,11 @@
     async function deleteUser(id) {
       if (!confirm("Are you sure you want to delete this user account?")) return;
       try {
-        await fetch('/api/admin/users/' + id, { method: 'DELETE' });
+        const token = localStorage.getItem('campus_admin_token') || '';
+        await fetch('/api/admin/users/' + id, {
+          method: 'DELETE',
+          headers: { 'x-admin-secret': token }
+        });
         loadAdminStats();
       } catch (err) { alert('Failed to delete user.'); }
     }

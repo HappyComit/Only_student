@@ -83,6 +83,7 @@ router.get('/stats', adminAuth, async (req, res) => {
         username: true,
         email: true,
         isSeller: true,
+        isVerified: true,
         university: true,
         createdAt: true
       }
@@ -127,6 +128,33 @@ router.get('/stats', adminAuth, async (req, res) => {
   } catch (error) {
     console.error("Admin Stats Error:", error);
     return res.status(500).json({ error: "Failed to fetch admin stats.", details: error.message });
+  }
+});
+
+/**
+ * @route   PUT /api/admin/users/:id/verify
+ * @desc    Toggle verified freelancer status
+ */
+router.put('/users/:id/verify', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id },
+      data: { isVerified: !user.isVerified }
+    });
+
+    return res.json({
+      message: `User ${updated.username} verification status updated to ${updated.isVerified}`,
+      isVerified: updated.isVerified
+    });
+  } catch (error) {
+    console.error("Admin Verify User Error:", error);
+    return res.status(500).json({ error: "Failed to update verification status." });
   }
 });
 

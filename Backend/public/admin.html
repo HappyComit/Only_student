@@ -559,11 +559,19 @@
       </div>
     </div>
 
-    <!-- Filter Chips (Matching Mobile App Navigation) -->
-    <div class="filter-chips">
-      <button class="chip active" onclick="switchTab('usersTab', this)">👥 Registered Students</button>
-      <button class="chip" onclick="switchTab('gigsTab', this)">🛠️ Service Listings</button>
-      <button class="chip" onclick="switchTab('ordersTab', this)">⚡ Live Orders Tracker</button>
+    <!-- Filter Chips & Search/Export Toolbar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+      <div class="filter-chips" style="margin-bottom: 0;">
+        <button class="chip active" onclick="switchTab('usersTab', this)">👥 Registered Students</button>
+        <button class="chip" onclick="switchTab('gigsTab', this)">🛠️ Service Listings</button>
+        <button class="chip" onclick="switchTab('ordersTab', this)">⚡ Live Orders Tracker</button>
+      </div>
+
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <input type="text" id="adminSearchInput" onkeyup="filterAdminTables()" placeholder="🔍 Search students, gigs, emails..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; min-width: 220px; outline: none; background: var(--surface); color: var(--text-main);" />
+        <button class="btn btn-secondary" onclick="exportStudentsCSV()" style="font-size: 12px; padding: 8px 12px;">📥 Export Students CSV</button>
+        <button class="btn btn-secondary" onclick="exportOrdersCSV()" style="font-size: 12px; padding: 8px 12px;">📥 Export Orders CSV</button>
+      </div>
     </div>
 
     <!-- Tab 1: Users -->
@@ -576,11 +584,12 @@
               <th>Email Address</th>
               <th>Account Role</th>
               <th>University</th>
+              <th>Verified Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody id="usersTableBody">
-            <tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Loading student users...</td></tr>
+            <tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Loading student users...</td></tr>
           </tbody>
         </table>
       </div>
@@ -659,6 +668,10 @@
       }
     });
 
+    let globalUsers = [];
+    let globalGigs = [];
+    let globalOrders = [];
+
     async function loadAdminStats() {
       try {
         const token = localStorage.getItem('campus_admin_token') || '';
@@ -672,9 +685,13 @@
           document.getElementById('statInProgress').innerText = data.metrics.inProgressOrders;
           document.getElementById('statRevenue').innerText = '₹' + (data.metrics.bookingFeeRevenue || 0);
 
-          renderUsers(data.users || []);
-          renderGigs(data.gigs || []);
-          renderOrders(data.orders || []);
+          globalUsers = data.users || [];
+          globalGigs = data.gigs || [];
+          globalOrders = data.orders || [];
+
+          renderUsers(globalUsers);
+          renderGigs(globalGigs);
+          renderOrders(globalOrders);
         }
       } catch (err) {
         console.error("Failed to load admin stats:", err);
@@ -684,18 +701,22 @@
     function renderUsers(users) {
       const tbody = document.getElementById('usersTableBody');
       if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No users found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">No users found.</td></tr>';
         return;
       }
       tbody.innerHTML = users.map(u => {
         const initial = (u.name || u.username || 'U')[0].toUpperCase();
+        const isVerified = u.isVerified || false;
         return `
           <tr>
             <td>
               <div class="user-cell">
                 <div class="user-avatar">${initial}</div>
                 <div>
-                  <div style="font-weight: 700;">${u.name || u.username}</div>
+                  <div style="font-weight: 700;">
+                    ${u.name || u.username}
+                    ${isVerified ? '<span style="color: #2563EB; font-size: 13px;" title="Verified Developer/Freelancer">✓</span>' : ''}
+                  </div>
                   <div style="font-size: 12px; color: var(--text-muted);">@${u.username}</div>
                 </div>
               </div>
@@ -704,7 +725,15 @@
             <td><span class="status-pill ${u.isSeller ? 'status-completed' : 'status-pending'}">${u.isSeller ? 'Freelancer' : 'Client'}</span></td>
             <td>${u.university || 'Chandigarh University'}</td>
             <td>
-              <button class="btn btn-danger" onclick="deleteUser('${u.id}')">Delete User</button>
+              <span class="status-pill ${isVerified ? 'status-completed' : 'status-pending'}">
+                ${isVerified ? '✓ Verified' : 'Unverified'}
+              </span>
+            </td>
+            <td style="display: flex; gap: 6px;">
+              <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 10px;" onclick="toggleVerifyUser('${u.id}')">
+                ${isVerified ? 'Revoke Verified' : '✓ Grant Verified'}
+              </button>
+              <button class="btn btn-danger" style="font-size: 12px; padding: 6px 10px;" onclick="deleteUser('${u.id}')">Delete</button>
             </td>
           </tr>
         `;
@@ -753,6 +782,86 @@
           </tr>
         `;
       }).join('');
+    }
+
+    async function toggleVerifyUser(id) {
+      try {
+        const token = localStorage.getItem('campus_admin_token') || '';
+        const res = await fetch('/api/admin/users/' + id + '/verify', {
+          method: 'PUT',
+          headers: { 'x-admin-secret': token }
+        });
+        const data = await res.json();
+        if (data.message) {
+          loadAdminStats();
+        }
+      } catch (err) { alert('Failed to update verification status.'); }
+    }
+
+    function filterAdminTables() {
+      const query = document.getElementById('adminSearchInput').value.toLowerCase().trim();
+      if (!query) {
+        renderUsers(globalUsers);
+        renderGigs(globalGigs);
+        renderOrders(globalOrders);
+        return;
+      }
+
+      const filteredUsers = globalUsers.filter(u => 
+        (u.name || '').toLowerCase().includes(query) ||
+        (u.username || '').toLowerCase().includes(query) ||
+        (u.email || '').toLowerCase().includes(query) ||
+        (u.university || '').toLowerCase().includes(query)
+      );
+
+      const filteredGigs = globalGigs.filter(g =>
+        (g.title || '').toLowerCase().includes(query) ||
+        (g.category || '').toLowerCase().includes(query) ||
+        (g.seller?.name || g.seller?.username || '').toLowerCase().includes(query)
+      );
+
+      const filteredOrders = globalOrders.filter(o =>
+        (o.gig?.title || '').toLowerCase().includes(query) ||
+        (o.buyer?.name || o.buyer?.username || '').toLowerCase().includes(query) ||
+        (o.seller?.name || o.seller?.username || '').toLowerCase().includes(query) ||
+        (o.status || '').toLowerCase().includes(query)
+      );
+
+      renderUsers(filteredUsers);
+      renderGigs(filteredGigs);
+      renderOrders(filteredOrders);
+    }
+
+    function exportStudentsCSV() {
+      if (!globalUsers || globalUsers.length === 0) {
+        alert("No student user data available to export.");
+        return;
+      }
+      let csv = "ID,Name,Username,Email,Role,Verified,University,Created At\n";
+      globalUsers.forEach(u => {
+        csv += `"${u.id}","${u.name || ''}","${u.username || ''}","${u.email}","${u.isSeller ? 'Freelancer' : 'Client'}","${u.isVerified ? 'Yes' : 'No'}","${u.university || 'Chandigarh University'}","${u.createdAt}"\n`;
+      });
+      downloadFile(csv, "CampusHive_Students_Export.csv", "text/csv");
+    }
+
+    function exportOrdersCSV() {
+      if (!globalOrders || globalOrders.length === 0) {
+        alert("No order transaction data available to export.");
+        return;
+      }
+      let csv = "Order ID,Service Title,Buyer,Seller,Price (INR),Status\n";
+      globalOrders.forEach(o => {
+        csv += `"${o.id}","${o.gig?.title || 'Service'}","${o.buyer?.name || o.buyer?.username}","${o.seller?.name || o.seller?.username}","₹${o.price}","${o.status}"\n`;
+      });
+      downloadFile(csv, "CampusHive_Orders_Export.csv", "text/csv");
+    }
+
+    function downloadFile(content, fileName, mimeType) {
+      const a = document.createElement('a');
+      const blob = new Blob([content], { type: mimeType });
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName;
+      a.click();
     }
 
     async function deleteGig(id) {

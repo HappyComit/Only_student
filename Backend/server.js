@@ -59,29 +59,23 @@ app.use(cookieParser());
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // ==========================================
-// RATE LIMITING
+// RATE LIMITING (Disabled for unlimited testing)
 // ==========================================
 
-// Global API Rate Limiter — 300 requests per 15 minutes per IP
+// Global API Rate Limiter — set high threshold for testing (10,000 requests)
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,   // 15 minutes
-  max: 300,                    // Limit each IP to 300 requests per window
-  standardHeaders: true,        // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false,         // Disable deprecated `X-RateLimit-*` headers
-  message: {
-    error: 'Too many requests from this IP. Please try again after 15 minutes.',
-  },
-});
-
-// Auth Limiter — 50 requests per 15 minutes per IP (login, signup, OTP)
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,   // 15 minutes
-  max: 50,                     // 50 attempts per window
+  max: 10000,                  // Unlimited / 10,000 requests per 15 minutes
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    error: 'Too many authentication attempts. Please try again in 15 minutes.',
-  },
+});
+
+// Auth Limiter — set high threshold for testing (10,000 requests)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,   // 15 minutes
+  max: 10000,                  // Unlimited / 10,000 requests per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // Apply global limiter to ALL /api endpoints

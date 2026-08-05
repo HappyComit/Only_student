@@ -868,11 +868,16 @@
       if (!confirm("Are you sure you want to delete/moderate this gig listing?")) return;
       try {
         const token = localStorage.getItem('campus_admin_token') || '';
-        await fetch('/api/admin/gigs/' + id, {
+        const res = await fetch('/api/admin/gigs/' + id, {
           method: 'DELETE',
           headers: { 'x-admin-secret': token }
         });
-        loadAdminStats();
+        const data = await res.json();
+        if (!res.ok) {
+          alert('Error deleting service: ' + (data.error || data.details || 'Failed to delete gig.'));
+        } else {
+          loadAdminStats();
+        }
       } catch (err) { alert('Failed to delete gig.'); }
     }
 
@@ -880,11 +885,16 @@
       if (!confirm("Are you sure you want to delete this user account?")) return;
       try {
         const token = localStorage.getItem('campus_admin_token') || '';
-        await fetch('/api/admin/users/' + id, {
+        const res = await fetch('/api/admin/users/' + id, {
           method: 'DELETE',
           headers: { 'x-admin-secret': token }
         });
-        loadAdminStats();
+        const data = await res.json();
+        if (!res.ok) {
+          alert('Error deleting user: ' + (data.error || data.details || 'Failed to delete user.'));
+        } else {
+          loadAdminStats();
+        }
       } catch (err) { alert('Failed to delete user.'); }
     }
 

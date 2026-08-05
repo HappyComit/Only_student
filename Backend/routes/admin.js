@@ -165,11 +165,14 @@ router.put('/users/:id/verify', adminAuth, async (req, res) => {
 router.delete('/gigs/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    // Cascade delete associated reviews and orders first
+    await prisma.review.deleteMany({ where: { gigId: id } });
+    await prisma.order.deleteMany({ where: { gigId: id } });
     await prisma.gig.delete({ where: { id } });
     return res.json({ message: "Gig deleted successfully." });
   } catch (error) {
     console.error("Admin Delete Gig Error:", error);
-    return res.status(500).json({ error: "Failed to delete gig." });
+    return res.status(500).json({ error: "Failed to delete gig.", details: error.message });
   }
 });
 
@@ -180,11 +183,18 @@ router.delete('/gigs/:id', adminAuth, async (req, res) => {
 router.delete('/users/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    // Cascade delete all dependent child records first due to PostgreSQL foreign key constraints
+    await prisma.review.deleteMany({ where: { OR: [{ reviewerId: id }, { sellerId: id }] } });
+    await prisma.message.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } });
+    await prisma.notification.deleteMany({ where: { userId: id } });
+    await prisma.order.deleteMany({ where: { OR: [{ buyerId: id }, { sellerId: id }] } });
+    await prisma.gig.deleteMany({ where: { sellerId: id } });
+
     await prisma.user.delete({ where: { id } });
     return res.json({ message: "User account deleted successfully." });
   } catch (error) {
     console.error("Admin Delete User Error:", error);
-    return res.status(500).json({ error: "Failed to delete user." });
+    return res.status(500).json({ error: "Failed to delete user.", details: error.message });
   }
 });
 

@@ -77,20 +77,21 @@
 - **File:** `CampusHive/app/marketplace/[id].tsx`
 - **Solution:** Removed hardcoded `PORTFOLIO_IMGS` array. Rendered Portfolio section dynamically using real gig image URLs (`gig.imageUrl` / `gig.portfolio`), and completely hide the section if no portfolio images exist.
 
-### 13. [ ] Admin Password Strength
+### 13. [x] Admin Password Security (COMPLETED)
 - **Problem:** Master admin password is `admin123` — extremely weak.
-- **Files:** `Backend/.env` (`ADMIN_PASSWORD`), `ADMIN_CREDENTIALS.md`
-- **Fix:** Change to a strong password before any public deployment.
+- **Files:** `Backend/.env` (`ADMIN_PASSWORD`), `Backend/routes/admin.js`
+- **Solution:** Protected all admin routes with JWT auth and set a strong `ADMIN_PASSWORD` env var in Render.
 
-### 14. [ ] Secure Credentials in `.env`
+### 14. [x] Secure Credentials in `.env` (COMPLETED)
 - **Problem:** `.env` file contains real Supabase DB password, JWT secret, and Razorpay keys in plain text. If this repo goes public, all credentials are exposed.
-- **File:** `Backend/.env`
-- **Fix:** Add `.env` to `.gitignore` (if not already). Use environment variables from hosting provider (Render/Railway) in production. Never commit secrets.
+- **Files:** `.gitignore`, `Backend/.gitignore`
+- **Solution:** Added `.env`, `**/.env`, and `ADMIN_CREDENTIALS.md` to `.gitignore`. Removed sensitive credentials from git history and configured all 13 environment variables securely in Render's dashboard.
 
 ### 15. [ ] Offline / Retry Support
 - **Problem:** If the user loses internet, API calls silently fail with no retry option.
 - **Files:** `CampusHive/constants/api.ts` (`apiFetch` function)
 - **Fix:** Add retry logic (1-2 retries with backoff) in `apiFetch`. Show a toast/banner when network is unavailable.
+
 
 ---
 

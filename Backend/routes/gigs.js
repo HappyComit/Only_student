@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
+const { sanitize } = require('../middleware/sanitize');
 
 /**
  * @route   POST /api/gigs
@@ -35,12 +36,12 @@ router.post('/', authenticateToken, async (req, res) => {
     // 3. Create the Gig and link it to the authenticated user
     const newGig = await prisma.gig.create({
       data: {
-        title,
-        description,
+        title: sanitize(title, 100),
+        description: sanitize(description, 2000),
         price: parseFloat(price),
         deliveryDays: parseInt(deliveryDays),
         imageUrl: imageUrl || "",
-        category: category.toLowerCase().trim(), // Standardize category strings in lower-case
+        category: sanitize(category, 30).toLowerCase().trim(), // Standardize category strings in lower-case
         sellerId: req.user.userId
       }
     });

@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
+const { sanitize, sanitizeFields } = require('../middleware/sanitize');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('FATAL: JWT_SECRET environment variable is not set');
@@ -57,22 +58,27 @@ router.post('/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     // 5. Create and save the new user to the SQLite database
+    const safe = sanitizeFields(req.body, {
+      name: 100, bio: 500, university: 150, department: 150,
+      year: 20, skills: 500, responseTime: 30, upiId: 50
+    });
+
     const newUser = await prisma.user.create({
       data: {
         email,
-        username,
+        username: sanitize(username, 30),
         passwordHash,
         isSeller: isSeller || false,
-        upiId: upiId || null,
-        bio: bio || "",
+        upiId: safe.upiId || null,
+        bio: safe.bio || "",
         avatarUrl: avatarUrl || "",
         // New Profile Fields:
-        name: name || null,
-        university: university || null,
-        department: department || null,
-        year: year || null,
-        skills: skills || null,
-        responseTime: responseTime || null,
+        name: safe.name || null,
+        university: safe.university || null,
+        department: safe.department || null,
+        year: safe.year || null,
+        skills: safe.skills || null,
+        responseTime: safe.responseTime || null,
         isVerified: false // Default to false upon registration
       }
     });
@@ -370,22 +376,28 @@ router.put('/profile', authenticateToken, async (req, res) => {
       isVerified
     } = req.body;
 
+    // Sanitize user-submitted text fields
+    const safe = sanitizeFields(req.body, {
+      name: 100, bio: 500, university: 150, department: 150,
+      year: 20, skills: 500, responseTime: 30, upiId: 50
+    });
+
     // Update user record in database
     const updatedUser = await prisma.user.update({
       where: { id: req.user.userId },
       data: {
 
         isSeller: isSeller !== undefined ? isSeller : undefined,
-        upiId: upiId !== undefined ? upiId : undefined,
-        bio: bio !== undefined ? bio : undefined,
+        upiId: safe.upiId !== undefined ? safe.upiId : undefined,
+        bio: safe.bio !== undefined ? safe.bio : undefined,
         avatarUrl: avatarUrl !== undefined ? avatarUrl : undefined,
         // Support updating new fields
-        name: name !== undefined ? name : undefined,
-        university: university !== undefined ? university : undefined,
-        department: department !== undefined ? department : undefined,
-        year: year !== undefined ? year : undefined,
-        skills: skills !== undefined ? skills : undefined,
-        responseTime: responseTime !== undefined ? responseTime : undefined,
+        name: safe.name !== undefined ? safe.name : undefined,
+        university: safe.university !== undefined ? safe.university : undefined,
+        department: safe.department !== undefined ? safe.department : undefined,
+        year: safe.year !== undefined ? safe.year : undefined,
+        skills: safe.skills !== undefined ? safe.skills : undefined,
+        responseTime: safe.responseTime !== undefined ? safe.responseTime : undefined,
         isVerified: isVerified !== undefined ? isVerified : undefined
       }
     });

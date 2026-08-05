@@ -3,6 +3,7 @@ const router = express.Router();
 const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
 const { getIO } = require('../socket');
+const { sanitize } = require('../middleware/sanitize');
 
 /**
  * @route   POST /api/messages
@@ -52,7 +53,7 @@ router.post('/', authenticateToken, async (req, res) => {
       data: {
         senderId,
         receiverId,
-        content: content.trim()
+        content: sanitize(content.trim(), 1000)
       }
     });
 

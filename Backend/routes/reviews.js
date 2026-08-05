@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
+const { sanitize } = require('../middleware/sanitize');
 
 /**
  * @route   POST /api/reviews
@@ -55,7 +56,7 @@ router.post('/', authenticateToken, async (req, res) => {
         reviewerId,
         sellerId: order.sellerId,
         rating: parseInt(rating),
-        comment: comment || ""
+        comment: sanitize(comment || "", 500)
       }
     });
 

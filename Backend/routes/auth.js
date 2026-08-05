@@ -125,8 +125,10 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: "Please enter both email and password." });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+
     // 2. Check if user exists by searching for email
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
     if (!user) {
       return res.status(400).json({ error: "Invalid email or password." });
     }

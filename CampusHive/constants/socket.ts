@@ -33,7 +33,7 @@ export async function connectSocket(): Promise<Socket | null> {
 
   socket = io(SOCKET_URL, {
     auth: { token },
-    transports: ['websocket'],   // Skip HTTP long-polling (faster on mobile)
+    transports: ['websocket', 'polling'], // Try WebSocket first (instant real-time speed), fallback to polling if connection drops
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,     // Start at 1s

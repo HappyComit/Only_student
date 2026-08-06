@@ -209,14 +209,6 @@ export default function ChatDetailsScreen() {
     }
   };
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background }}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
-  }
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -250,32 +242,58 @@ export default function ChatDetailsScreen() {
         <Text style={styles.projectStripText} numberOfLines={1}>{displayProjectTitle}</Text>
       </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.messagesContent}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => {
-          const mine = item.senderId !== partnerId;
-          const formattedTime = new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          return (
-            <View style={[styles.messageRow, mine ? styles.messageRowMine : styles.messageRowOther]}>
-              <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
-                <Text style={[styles.messageText, mine ? styles.messageTextMine : styles.messageTextOther]}>{item.content}</Text>
-                <Text style={[styles.messageTime, mine ? styles.messageTimeMine : styles.messageTimeOther]}>{formattedTime}</Text>
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={{ ...Typography.bodySmall, color: Colors.textSecondary, marginTop: Spacing.sm }}>Loading messages...</Text>
+        </View>
+      ) : (
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.messagesContent}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => {
+            const mine = item.senderId !== partnerId;
+            const formattedTime = new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return (
+              <View style={[styles.messageRow, mine ? styles.messageRowMine : styles.messageRowOther]}>
+                <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
+                  <Text style={[styles.messageText, mine ? styles.messageTextMine : styles.messageTextOther]}>{item.content}</Text>
+                  <Text style={[styles.messageTime, mine ? styles.messageTimeMine : styles.messageTimeOther]}>{formattedTime}</Text>
+                </View>
               </View>
-            </View>
-          );
-        }}
-      />
+            );
+          }}
+        />
+      )}
 
       {isLocked && (
         <View style={styles.lockedBanner}>
-          <MaterialCommunityIcons name="lock-outline" size={18} color="#D97706" />
-          <Text style={styles.lockedBannerText}>
-            Chat Locked 🔒 — Place a hire request (₹6 booking fee) to unlock chat.
-          </Text>
+          <View style={styles.lockedBannerContent}>
+            <MaterialCommunityIcons name="lock-outline" size={22} color="#D97706" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.lockedBannerTitle}>Chat Locked 🔒</Text>
+              <Text style={styles.lockedBannerText}>
+                You must hire this freelancer and pay the ₹6 platform booking fee to unlock direct messaging.
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.lockedHireButton}
+            activeOpacity={0.86}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/marketplace');
+              }
+            }}
+          >
+            <MaterialCommunityIcons name="briefcase-check-outline" size={14} color="#fff" />
+            <Text style={styles.lockedHireButtonText}>Go to Hire</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -478,22 +496,46 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.disabled,
   },
   lockedBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
     backgroundColor: '#FEF3C7',
     borderColor: '#F59E0B',
     borderWidth: 1,
     paddingHorizontal: Spacing.base,
-    paddingVertical: 10,
+    paddingVertical: 12,
     marginHorizontal: Spacing.base,
     marginBottom: Spacing.xs,
     borderRadius: BorderRadius.md,
   },
+  lockedBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  lockedBannerTitle: {
+    ...Typography.body,
+    color: '#92400E',
+    fontWeight: '800',
+    marginBottom: 2,
+  },
   lockedBannerText: {
     ...Typography.bodySmall,
     color: '#92400E',
-    fontWeight: '700',
-    flex: 1,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  lockedHireButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#D97706',
+    borderRadius: BorderRadius.full,
+    paddingVertical: 9,
+    paddingHorizontal: Spacing.base,
+  },
+  lockedHireButtonText: {
+    ...Typography.bodySmall,
+    color: '#fff',
+    fontWeight: '800',
   },
 });

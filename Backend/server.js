@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const { initSocket } = require('./socket');
+const logger = require('./utils/logger');
 
 // Import our route files
 const authRoutes = require('./routes/auth');
@@ -25,6 +26,18 @@ const PORT = process.env.PORT || 5000;
 
 // Trust reverse proxy headers (required on Render/Cloudflare for rate limiting)
 app.set('trust proxy', 1);
+
+// Structured HTTP Request Logger Middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    // Skip logging static public assets to keep logs clean
+    if (!req.originalUrl.startsWith('/public')) {
+      logger.http(req.method, req.originalUrl, res.statusCode, Date.now() - start);
+    }
+  });
+  next();
+});
 
 // ==========================================
 // MIDDLEWARES
@@ -90,6 +103,7 @@ app.use('/api/auth', authLimiter);
 
 // Dedicated Health Check route for Cron / Keep-Alive services (e.g. Cron-Job.org, UptimeRobot)
 app.get(['/health', '/api/health'], (req, res) => {
+  logger.cron('Keep-alive ping received from monitoring service');
   res.status(200).json({
     status: "OK",
     uptime: Math.floor(process.uptime()),
@@ -124,11 +138,20 @@ app.get('/admin', (req, res) => {
 
 // Global Error Handler middleware to capture and return errors nicely instead of crashing the server
 app.use((err, req, res, next) => {
-  console.error("Global Server Error:", err.stack);
+  logger.error('SERVER', `Unhandled Express Error: ${err.message}`, err.stack);
   res.status(500).json({ 
     error: "An unexpected error occurred on the server.", 
     details: err.message 
   });
+});
+
+// ── Global Process Crash Guards ─────────────────────────────────────
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('CRASH GUARD', 'Unhandled Promise Rejection:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('CRASH GUARD', 'Uncaught Exception:', error.stack || error);
 });
 
 // ==========================================
@@ -140,9 +163,6 @@ const server = http.createServer(app);
 initSocket(server);
 
 server.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(` 🐝 CampusHive Backend Server started successfully!`);
-  console.log(` 🚀 Running on: http://localhost:${PORT}`);
-  console.log(` ⚡ Socket.IO: WebSocket connections enabled`);
-  console.log(`====================================================`);
+  logger.success('SYSTEM', `CampusHive Backend Server started on port ${PORT}`);
+  logger.info('SYSTEM', `WebSocket connections ready (Socket.IO)`);
 });

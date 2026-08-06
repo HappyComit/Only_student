@@ -1,5 +1,6 @@
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
+const logger = require('./utils/logger');
 
 let io = null;
 
@@ -17,7 +18,9 @@ function initSocket(httpServer) {
       methods: ['GET', 'POST'],
       credentials: true,
     },
-    // Skip HTTP long-polling — go straight to WebSocket (faster for mobile)
+    // Keepalive heartbeats so Render proxy does not drop WebSockets
+    pingInterval: 10000, // 10s heartbeat
+    pingTimeout: 20000,
     transports: ['websocket', 'polling'],
   });
 
@@ -50,18 +53,18 @@ function initSocket(httpServer) {
 
     // Join a private room named after the user's ID so we can target messages
     socket.join(`user:${userId}`);
-    console.log(`🔌 Socket connected: ${userId} (socket ${socket.id})`);
+    logger.socket(`Connected: user ${userId} (socket ID: ${socket.id})`);
 
     socket.on('disconnect', (reason) => {
-      console.log(`🔌 Socket disconnected: ${userId} — ${reason}`);
+      logger.socket(`Disconnected: user ${userId} — Reason: ${reason}`);
     });
 
     socket.on('error', (err) => {
-      console.error(`🔌 Socket error for ${userId}:`, err.message);
+      logger.error('SOCKET', `Error for user ${userId}: ${err.message}`);
     });
   });
 
-  console.log('⚡ Socket.IO initialized and ready for connections');
+  logger.info('SOCKET', 'Socket.IO initialized and ready for connections');
   return io;
 }
 

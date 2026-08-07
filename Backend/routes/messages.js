@@ -49,11 +49,13 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     // 4. Save the message to the database
+    // Sender's own message is auto-marked as read (they don't need to "read" their own message)
     const newMessage = await prisma.message.create({
       data: {
         senderId,
         receiverId,
-        content: sanitize(content.trim(), 1000)
+        content: sanitize(content.trim(), 1000),
+        isRead: true
       }
     });
 
@@ -109,19 +111,37 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const partnerIds = Array.from(partnerMap.keys());
 
-    // Fetch user details for all unique partners
-    const partners = await prisma.user.findMany({
-      where: {
-        id: { in: partnerIds }
-      },
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        avatarUrl: true,
-        isSeller: true
-      }
-    });
+    // Fetch user details and unread counts in parallel for all unique partners
+    const [partners, unreadCounts] = await Promise.all([
+      prisma.user.findMany({
+        where: {
+          id: { in: partnerIds }
+        },
+        select: {
+          id: true,
+          username: true,
+          name: true,
+          avatarUrl: true,
+          isSeller: true
+        }
+      }),
+      // Count unread messages per partner (messages SENT BY partner TO current user that are unread)
+      prisma.message.groupBy({
+        by: ['senderId'],
+        where: {
+          receiverId: userId,
+          senderId: { in: partnerIds },
+          isRead: false
+        },
+        _count: { id: true }
+      })
+    ]);
+
+    // Build a lookup map: partnerId -> unreadCount
+    const unreadMap = new Map();
+    for (const entry of unreadCounts) {
+      unreadMap.set(entry.senderId, entry._count.id);
+    }
 
     const threads = partners.map(partner => {
       const latestMsg = partnerMap.get(partner.id);
@@ -134,7 +154,8 @@ router.get('/', authenticateToken, async (req, res) => {
           createdAt: latestMsg.createdAt,
           senderId: latestMsg.senderId,
           receiverId: latestMsg.receiverId
-        }
+        },
+        unreadCount: unreadMap.get(partner.id) || 0
       };
     });
 
@@ -229,6 +250,43 @@ router.get('/:userId', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("Fetch Chat History Error:", error);
     return res.status(500).json({ error: "Failed to load chat history." });
+  }
+});
+
+/**
+ * @route   PUT /api/messages/:userId/read
+ * @desc    Marks all unread messages from a specific partner as read (Secure route)
+ */
+router.put('/:userId/read', authenticateToken, async (req, res) => {
+  try {
+    const currentUserId = req.user.userId;
+    const partnerId = req.params.userId;
+
+    // Mark all messages from this partner to current user as read
+    const result = await prisma.message.updateMany({
+      where: {
+        senderId: partnerId,
+        receiverId: currentUserId,
+        isRead: false
+      },
+      data: {
+        isRead: true
+      }
+    });
+
+    // Notify both users so their thread lists refresh with updated badge counts
+    const io = getIO();
+    if (io && result.count > 0) {
+      io.to(`user:${currentUserId}`).to(`user:${partnerId}`).emit('threads_updated');
+    }
+
+    return res.json({
+      message: "Messages marked as read.",
+      markedCount: result.count
+    });
+  } catch (error) {
+    console.error("Mark Messages Read Error:", error);
+    return res.status(500).json({ error: "Failed to mark messages as read." });
   }
 });
 

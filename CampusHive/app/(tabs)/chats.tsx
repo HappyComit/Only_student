@@ -96,7 +96,7 @@ export default function ChatsTabScreen() {
         const name = counterpart.name || counterpart.username;
         const avatar = counterpart.avatarUrl || `https://i.pravatar.cc/150?img=${Math.abs(counterpart.username.charCodeAt(0) % 70) || 12}`;
 
-        const formattedTime = latest 
+        const formattedTime = latest
           ? new Date(latest.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           : '';
 

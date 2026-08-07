@@ -1,8 +1,11 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import {
   Alert,
+  Animated,
   FlatList,
   KeyboardAvoidingView,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Platform,
   StyleSheet,
   Text,
@@ -58,6 +61,41 @@ export default function ChatDetailsScreen() {
   const [isLocked, setIsLocked] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // ── "New messages" banner state ───────────────────────────────────
+  const [newMsgCount, setNewMsgCount] = useState(0);
+  const isNearBottom = useRef(true);
+  const bannerAnim = useRef(new Animated.Value(0)).current; // 0 = hidden, 1 = visible
+
+  // Animate banner in/out when count changes
+  useEffect(() => {
+    Animated.spring(bannerAnim, {
+      toValue: newMsgCount > 0 ? 1 : 0,
+      useNativeDriver: true,
+      tension: 120,
+      friction: 14,
+    }).start();
+  }, [newMsgCount]);
+
+  // Track scroll position — auto-dismiss banner when user scrolls to bottom
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - layoutMeasurement.height - contentOffset.y;
+      isNearBottom.current = distanceFromBottom < 150;
+      if (isNearBottom.current && newMsgCount > 0) {
+        setNewMsgCount(0);
+      }
+    },
+    [newMsgCount],
+  );
+
+  // Tap banner → scroll to bottom & dismiss
+  const handleBannerPress = useCallback(() => {
+    flatListRef.current?.scrollToEnd({ animated: true });
+    setNewMsgCount(0);
+  }, []);
+
   const fetchHistory = async (isInitial = false) => {
     if (!partnerId || partnerId === 'undefined') {
       if (isInitial) setLoading(false);
@@ -97,6 +135,13 @@ export default function ChatDetailsScreen() {
   // ── Initial fetch on mount (one-time HTTP load) ──────────────────
   useEffect(() => {
     fetchHistory(true);
+
+    // Mark all messages from this partner as read when conversation is opened
+    if (partnerId && partnerId !== 'undefined') {
+      apiFetch(`/messages/${partnerId}/read`, { method: 'PUT' }).catch(() => {
+        // Silently ignore — marking as read is best-effort
+      });
+    }
   }, [id, partnerId]);
 
   // ── Real-time updates via Socket.IO ──────────────────────────────
@@ -127,10 +172,15 @@ export default function ChatDetailsScreen() {
           return [...prev, msg];
         });
 
-        // Auto-scroll to bottom
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }, 100);
+        // If user is scrolled up and message is from the partner, increment banner count
+        if (!isNearBottom.current && msg.senderId === partnerId) {
+          setNewMsgCount((prev) => prev + 1);
+        } else {
+          // Auto-scroll to bottom when near the bottom
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }
       };
 
       sock.on('new_message', handleNewMessage);
@@ -248,25 +298,60 @@ export default function ChatDetailsScreen() {
           <Text style={{ ...Typography.bodySmall, color: Colors.textSecondary, marginTop: Spacing.sm }}>Loading messages...</Text>
         </View>
       ) : (
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messagesContent}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => {
-            const mine = item.senderId !== partnerId;
-            const formattedTime = new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            return (
-              <View style={[styles.messageRow, mine ? styles.messageRowMine : styles.messageRowOther]}>
-                <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
-                  <Text style={[styles.messageText, mine ? styles.messageTextMine : styles.messageTextOther]}>{item.content}</Text>
-                  <Text style={[styles.messageTime, mine ? styles.messageTimeMine : styles.messageTimeOther]}>{formattedTime}</Text>
+        <View style={{ flex: 1 }}>
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.messagesContent}
+            showsVerticalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={100}
+            renderItem={({ item }) => {
+              const mine = item.senderId !== partnerId;
+              const formattedTime = new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              return (
+                <View style={[styles.messageRow, mine ? styles.messageRowMine : styles.messageRowOther]}>
+                  <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
+                    <Text style={[styles.messageText, mine ? styles.messageTextMine : styles.messageTextOther]}>{item.content}</Text>
+                    <Text style={[styles.messageTime, mine ? styles.messageTimeMine : styles.messageTimeOther]}>{formattedTime}</Text>
+                  </View>
                 </View>
-              </View>
-            );
-          }}
-        />
+              );
+            }}
+          />
+
+          {/* ── "New messages" floating banner ──────────────────────── */}
+          {newMsgCount > 0 && (
+            <Animated.View
+              style={[
+                styles.newMsgBanner,
+                {
+                  opacity: bannerAnim,
+                  transform: [
+                    {
+                      translateY: bannerAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [40, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.newMsgBannerButton}
+                activeOpacity={0.86}
+                onPress={handleBannerPress}
+              >
+                <MaterialCommunityIcons name="chevron-down" size={18} color={Colors.white} />
+                <Text style={styles.newMsgBannerText}>
+                  {newMsgCount} new message{newMsgCount !== 1 ? 's' : ''}
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+        </View>
       )}
 
       {isLocked && (
@@ -494,6 +579,31 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: Colors.disabled,
+  },
+  newMsgBanner: {
+    position: 'absolute',
+    bottom: 12,
+    alignSelf: 'center',
+    zIndex: 10,
+  },
+  newMsgBannerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  newMsgBannerText: {
+    ...Typography.bodySmall,
+    color: Colors.white,
+    fontWeight: '700',
   },
   lockedBanner: {
     backgroundColor: '#FEF3C7',

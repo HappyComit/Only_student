@@ -1,8 +1,11 @@
+import React, { useState, useEffect, useCallback } from 'react';
 import { Tabs } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, Typography } from '@/constants/theme';
+import { apiFetch } from '@/constants/api';
+import { connectSocket, disconnectSocket } from '@/constants/socket';
 
 type TabIconProps = {
   name: string;
@@ -20,6 +23,45 @@ function TabIcon({ name, color, focused }: TabIconProps) {
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const [totalUnread, setTotalUnread] = useState(0);
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const data = await apiFetch<{ threads: { unreadCount?: number }[] }>('/messages');
+      if (data?.threads) {
+        const total = data.threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0);
+        setTotalUnread(total);
+      }
+    } catch {
+      // Silently ignore — user may not be logged in
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUnreadCount();
+
+    let mounted = true;
+    const setupSocket = async () => {
+      const sock = await connectSocket();
+      if (!sock || !mounted) return;
+
+      const handleUpdate = () => fetchUnreadCount();
+      sock.on('threads_updated', handleUpdate);
+      sock.on('new_message', handleUpdate);
+
+      return () => {
+        sock.off('threads_updated', handleUpdate);
+        sock.off('new_message', handleUpdate);
+      };
+    };
+
+    const cleanupPromise = setupSocket();
+
+    return () => {
+      mounted = false;
+      cleanupPromise.then((cleanup) => cleanup?.());
+    };
+  }, [fetchUnreadCount]);
 
   return (
     <Tabs
@@ -78,6 +120,8 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <TabIcon name={focused ? 'chat-processing' : 'chat-processing-outline'} color={color} focused={focused} />
           ),
+          tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
+          tabBarBadgeStyle: styles.tabBadge,
         }}
       />
       <Tabs.Screen
@@ -126,5 +170,14 @@ const styles = StyleSheet.create({
   },
   iconActive: {
     backgroundColor: Colors.primary + '12',
+  },
+  tabBadge: {
+    backgroundColor: '#25D366',
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
   },
 });

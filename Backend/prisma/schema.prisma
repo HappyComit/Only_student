@@ -109,6 +109,7 @@ model Message {
   senderId   String                        // User ID of the sender
   receiverId String                        // User ID of the receiver
   content    String                        // The actual text content
+  isRead     Boolean  @default(false)     // Whether the receiver has seen this message
   createdAt  DateTime @default(now())     // Timestamp when message was sent
 
   // Database Relationships:

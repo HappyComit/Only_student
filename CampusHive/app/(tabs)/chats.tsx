@@ -239,10 +239,21 @@ export default function ChatsTabScreen() {
               <View style={styles.threadTextWrap}>
                 <View style={styles.threadNameRow}>
                   <Text style={styles.threadName} numberOfLines={1}>{item.counterpartName}</Text>
-                  <Text style={styles.threadTime}>{formatPreviewTime(item.latestMessage.time)}</Text>
+                  <View style={styles.rightHeaderGroup}>
+                    <Text style={[styles.threadTime, item.unreadCount > 0 && styles.threadTimeUnread]}>
+                      {formatPreviewTime(item.latestMessage.time)}
+                    </Text>
+                    {item.unreadCount > 0 && (
+                      <View style={styles.unreadPill}>
+                        <Text style={styles.unreadPillText}>{item.unreadCount}</Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
                 <Text style={styles.threadRole}>{item.counterpartRole} • {item.projectTitle}</Text>
-                <Text style={styles.threadPreview} numberOfLines={1}>{item.latestMessage.text}</Text>
+                <Text style={[styles.threadPreview, item.unreadCount > 0 && styles.threadPreviewUnread]} numberOfLines={1}>
+                  {item.latestMessage.text}
+                </Text>
               </View>
             </View>
 
@@ -259,11 +270,7 @@ export default function ChatsTabScreen() {
                 </Text>
               </View>
 
-              {item.unreadCount > 0 ? (
-                <View style={styles.unreadPill}>
-                  <Text style={styles.unreadPillText}>{item.unreadCount}</Text>
-                </View>
-              ) : (
+              {item.unreadCount === 0 && (
                 <MaterialCommunityIcons name="check-all" size={16} color={Colors.textSecondary} />
               )}
             </View>
@@ -462,6 +469,15 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     color: Colors.textSecondary,
   },
+  threadTimeUnread: {
+    color: '#25D366',
+    fontWeight: '700',
+  },
+  rightHeaderGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   threadRole: {
     ...Typography.caption,
     color: Colors.primaryDark,
@@ -471,6 +487,10 @@ const styles = StyleSheet.create({
   threadPreview: {
     ...Typography.bodySmall,
     color: Colors.textSecondary,
+  },
+  threadPreviewUnread: {
+    color: Colors.text,
+    fontWeight: '600',
   },
   threadFooterRow: {
     marginTop: Spacing.sm,
@@ -500,16 +520,16 @@ const styles = StyleSheet.create({
     color: Colors.success,
   },
   unreadPill: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: Colors.primary,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#25D366',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
   },
   unreadPillText: {
-    ...Typography.caption,
+    fontSize: 12,
     color: Colors.white,
     fontWeight: '800',
   },

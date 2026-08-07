@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, TouchableOpacity, View, Text } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Colors, Typography } from '@/constants/theme';
 import { apiFetch } from '@/constants/api';
 
@@ -30,12 +31,19 @@ export default function NotificationBell({
     }
   }, []);
 
+  // Fetch immediately on mount & setup interval
   useEffect(() => {
     fetchUnreadCount();
-    // Poll unread count every 15 seconds
     const interval = setInterval(fetchUnreadCount, 15000);
     return () => clearInterval(interval);
   }, [fetchUnreadCount]);
+
+  // Refresh count whenever screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchUnreadCount();
+    }, [fetchUnreadCount])
+  );
 
   return (
     <TouchableOpacity
@@ -47,7 +55,7 @@ export default function NotificationBell({
       {unreadCount > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadCount > 99 ? '99+' : unreadCount}
           </Text>
         </View>
       )}
@@ -68,8 +76,8 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: -3,
+    right: -3,
     minWidth: 18,
     height: 18,
     borderRadius: 9,
@@ -87,3 +95,4 @@ const styles = StyleSheet.create({
     lineHeight: 12,
   },
 });
+

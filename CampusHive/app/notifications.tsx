@@ -339,36 +339,46 @@ function NotificationCard({
   const tone = TYPE_CONFIG[item?.type as NotificationType] || TYPE_CONFIG.order;
   const status = orderStatus || item?.orderStatus || item?.status || '';
 
+  // For ORDER_REQUEST notifications, always show Accept/Decline buttons
+  const isOrderRequestType =
+    item?.rawType === 'ORDER_REQUEST' || item?.rawType === 'PAYMENT_BOOKING';
+
   const isDeclined =
-    status === 'DECLINED' ||
-    item?.rawType === 'ORDER_DECLINED' ||
-    item?.title?.toLowerCase().includes('decline') ||
-    item?.body?.toLowerCase().includes('decline');
+    !isOrderRequestType && (
+      status === 'DECLINED' ||
+      item?.rawType === 'ORDER_DECLINED' ||
+      item?.title?.toLowerCase().includes('declined') ||
+      item?.body?.toLowerCase().includes('declined')
+    );
 
   const isAccepted =
-    status === 'IN_PROGRESS' ||
-    status === 'ACCEPTED' ||
-    item?.rawType === 'ORDER_ACCEPTED' ||
-    item?.title?.toLowerCase().includes('accepted') ||
-    item?.body?.toLowerCase().includes('accepted');
+    !isOrderRequestType && (
+      status === 'IN_PROGRESS' ||
+      status === 'ACCEPTED' ||
+      item?.rawType === 'ORDER_ACCEPTED' ||
+      item?.title?.toLowerCase().includes('accepted') ||
+      item?.body?.toLowerCase().includes('accepted')
+    );
 
   const isCompleted =
-    status === 'COMPLETED' ||
-    item?.rawType === 'ORDER_COMPLETED' ||
-    item?.title?.toLowerCase().includes('completed') ||
-    item?.body?.toLowerCase().includes('completed');
+    !isOrderRequestType && (
+      status === 'COMPLETED' ||
+      item?.rawType === 'ORDER_COMPLETED' ||
+      item?.title?.toLowerCase().includes('completed') ||
+      item?.body?.toLowerCase().includes('completed')
+    );
+
+  // Check if this specific order has already been acted upon (from orderStatusMap)
+  const orderAlreadyActedUpon =
+    status === 'DECLINED' || status === 'IN_PROGRESS' || status === 'ACCEPTED' || status === 'COMPLETED';
 
   const isPendingOrderRequest =
-    !isDeclined &&
-    !isAccepted &&
-    !isCompleted &&
-    (item?.rawType === 'ORDER_REQUEST' ||
-      item?.rawType === 'PAYMENT_BOOKING' ||
+    !orderAlreadyActedUpon &&
+    (isOrderRequestType ||
       status === 'PENDING_ACCEPTANCE' ||
       status === 'PENDING' ||
       item?.title?.toLowerCase().includes('job request') ||
       item?.title?.toLowerCase().includes('order request') ||
-      item?.title?.toLowerCase().includes('order') ||
       item?.body?.toLowerCase().includes('placed an order') ||
       item?.body?.toLowerCase().includes('accept or decline') ||
       item?.body?.toLowerCase().includes('accept or reject'));
@@ -808,22 +818,33 @@ export default function NotificationsScreen() {
       </ScrollView>
 
       {selectedNotif && (() => {
+        const selectedIsOrderRequest =
+          selectedNotif.rawType === 'ORDER_REQUEST' || selectedNotif.rawType === 'PAYMENT_BOOKING';
+
+        const selectedOrderStatus = orderStatusMap[selectedNotif.relatedId] || orderStatusMap[selectedNotif.id] || '';
+        const selectedAlreadyActedUpon =
+          selectedOrderStatus === 'DECLINED' || selectedOrderStatus === 'IN_PROGRESS' || selectedOrderStatus === 'ACCEPTED' || selectedOrderStatus === 'COMPLETED';
+
         const isDeclined =
-          selectedNotif.rawType === 'ORDER_DECLINED' ||
-          selectedNotif.title?.toLowerCase().includes('decline') ||
-          selectedNotif.body?.toLowerCase().includes('decline');
+          !selectedIsOrderRequest && (
+            selectedNotif.rawType === 'ORDER_DECLINED' ||
+            selectedNotif.title?.toLowerCase().includes('declined') ||
+            selectedNotif.body?.toLowerCase().includes('declined')
+          );
 
         const isAccepted =
-          selectedNotif.rawType === 'ORDER_ACCEPTED' ||
-          selectedNotif.title?.toLowerCase().includes('accepted') ||
-          selectedNotif.body?.toLowerCase().includes('accepted');
+          !selectedIsOrderRequest && (
+            selectedNotif.rawType === 'ORDER_ACCEPTED' ||
+            selectedNotif.title?.toLowerCase().includes('accepted') ||
+            selectedNotif.body?.toLowerCase().includes('accepted')
+          );
 
         const isPendingOrderRequest =
-          !isDeclined &&
-          !isAccepted &&
-          (selectedNotif.rawType === 'ORDER_REQUEST' ||
+          !selectedAlreadyActedUpon &&
+          (selectedIsOrderRequest ||
             selectedNotif.title?.toLowerCase().includes('job request') ||
             selectedNotif.title?.toLowerCase().includes('order request') ||
+            selectedNotif.body?.toLowerCase().includes('accept or decline') ||
             selectedNotif.body?.toLowerCase().includes('accept or reject'));
 
         return (

@@ -12,6 +12,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/theme';
 import { apiFetch, getToken } from '@/constants/api';
+import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 
 type NotificationType = 'order' | 'community' | 'event' | 'review' | 'payment';
@@ -465,42 +466,22 @@ function NotificationCard({
             <Text style={{ color: '#2563EB', fontWeight: '800', fontSize: 13 }}>COMPLETED</Text>
           </View>
         ) : isPendingOrderRequest ? (
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: 10, marginBottom: 10 }}>
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: Colors.primary,
-                paddingVertical: 10,
-                borderRadius: 8,
-                alignItems: 'center',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                gap: 6,
-              }}
-              onPress={onAccept}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons name="check-circle-outline" size={18} color="#fff" />
-              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>Accept</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: '#FEE2E2',
-                paddingVertical: 10,
-                borderRadius: 8,
-                alignItems: 'center',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                gap: 6,
-              }}
-              onPress={onDecline}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons name="close-circle-outline" size={18} color="#DC2626" />
-              <Text style={{ color: '#DC2626', fontWeight: '800', fontSize: 14 }}>Decline</Text>
-            </TouchableOpacity>
+          <View
+            style={{
+              backgroundColor: '#FEF3C7',
+              paddingVertical: 6,
+              paddingHorizontal: 12,
+              borderRadius: 8,
+              alignSelf: 'flex-start',
+              marginTop: 8,
+              marginBottom: 8,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <MaterialCommunityIcons name="clock-outline" size={16} color="#D97706" />
+            <Text style={{ color: '#D97706', fontWeight: '800', fontSize: 13 }}>PENDING — Tap to Open Chat</Text>
           </View>
         ) : null}
 
@@ -805,8 +786,28 @@ export default function NotificationsScreen() {
                 item={item}
                 unread={item.unread}
                 onMarkRead={() => markRead(item.id)}
-                onPress={() => {
+                onPress={async () => {
                   markRead(item.id);
+                  if (item.relatedId && (item.rawType?.includes('ORDER') || item.rawType?.includes('PAYMENT'))) {
+                    try {
+                      const res = await apiFetch<{ order: any }>(`/orders/${item.relatedId}`);
+                      if (res?.order) {
+                        const token = await getToken();
+                        if (token) {
+                          const profileRes = await apiFetch<{ user: any }>('/auth/profile').catch(() => null);
+                          const myId = profileRes?.user?.id;
+                          const partnerId = res.order.buyerId === myId ? res.order.sellerId : res.order.buyerId;
+                          if (partnerId) {
+                            router.push({
+                              pathname: '/chats/[id]',
+                              params: { id: partnerId },
+                            });
+                            return;
+                          }
+                        }
+                      }
+                    } catch {}
+                  }
                   setSelectedNotif(item);
                 }}
                 onAccept={() => handleAcceptOrder(item.relatedId, item.id)}

@@ -242,6 +242,14 @@ router.get('/:userId', authenticateToken, async (req, res) => {
         avatarUrl: userExists.avatarUrl
       },
       isLocked: !activeOrder,
+      activeOrder: activeOrder ? {
+        id: activeOrder.id,
+        buyerId: activeOrder.buyerId,
+        sellerId: activeOrder.sellerId,
+        status: activeOrder.status,
+        price: activeOrder.price,
+        bookingFee: activeOrder.bookingFee
+      } : null,
       count: chatHistory.length,
       history: chatHistory,
       page,

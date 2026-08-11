@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
+  Alert,
   Animated,
   FlatList,
   KeyboardAvoidingView,
@@ -58,6 +59,9 @@ export default function ChatDetailsScreen() {
     avatarUrl: freelancerAvatar || '',
   });
   const [isLocked, setIsLocked] = useState(false);
+  const [activeOrder, setActiveOrder] = useState<any | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // ── "New messages" banner state ───────────────────────────────────
@@ -109,12 +113,15 @@ export default function ChatDetailsScreen() {
         return;
       }
 
-      const data = await apiFetch<{ chatPartner: any; isLocked?: boolean; count: number; history: any[] }>(`/messages/${partnerId}`);
+      const data = await apiFetch<{ chatPartner: any; isLocked?: boolean; activeOrder?: any; count: number; history: any[] }>(`/messages/${partnerId}`);
       if (data) {
         if (data.chatPartner) {
           setChatPartner(data.chatPartner);
         }
         setIsLocked(Boolean(data.isLocked));
+        if (data.activeOrder) {
+          setActiveOrder(data.activeOrder);
+        }
         if (Array.isArray(data.history)) {
           setMessages((prev) => {
             const localMsgs = prev.filter((m) => String(m.id).startsWith('local-'));
@@ -131,9 +138,15 @@ export default function ChatDetailsScreen() {
     }
   };
 
-  // ── Initial fetch on mount (one-time HTTP load) ──────────────────
+  // ── Initial fetch on mount & current user lookup ──────────────────
   useEffect(() => {
     fetchHistory(true);
+
+    apiFetch<{ user: any }>('/auth/profile')
+      .then((res) => {
+        if (res?.user?.id) setCurrentUserId(res.user.id);
+      })
+      .catch(() => {});
 
     // Mark all messages from this partner as read when conversation is opened
     if (partnerId && partnerId !== 'undefined') {
@@ -358,7 +371,86 @@ export default function ChatDetailsScreen() {
         </View>
       )}
 
-      {isLocked && (
+      {/* ── Interactive Accept/Decline Order Banner Inside Chat ── */}
+      {activeOrder && activeOrder.status === 'PENDING_ACCEPTANCE' && (
+        <View style={styles.actionBannerWrap}>
+          {currentUserId === activeOrder.sellerId ? (
+            <View style={styles.actionRequestBanner}>
+              <View style={styles.actionBannerHeader}>
+                <MaterialCommunityIcons name="bell-ring-outline" size={22} color="#1D4ED8" />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.actionBannerTitle}>🔔 New Hire Request (₹6 Fee Paid)</Text>
+                  <Text style={styles.actionBannerSub}>
+                    Client wants to hire you for '{displayProjectTitle}'. Please accept or decline to start messaging.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.actionButtonsRow}>
+                <TouchableOpacity
+                  style={styles.acceptButton}
+                  activeOpacity={0.86}
+                  disabled={actionLoading}
+                  onPress={async () => {
+                    setActionLoading(true);
+                    try {
+                      await apiFetch(`/orders/${activeOrder.id}/accept`, { method: 'POST' });
+                      setIsLocked(false);
+                      setActiveOrder((prev: any) => ({ ...prev, status: 'IN_PROGRESS' }));
+                      Alert.alert('Job Accepted! 🎉', 'You have accepted the order. Work is now IN_PROGRESS.');
+                    } catch (err: any) {
+                      Alert.alert('Error', err.message || 'Failed to accept order.');
+                    } finally {
+                      setActionLoading(false);
+                    }
+                  }}
+                >
+                  <MaterialCommunityIcons name="check-circle-outline" size={16} color="#fff" />
+                  <Text style={styles.acceptButtonText}>{actionLoading ? 'Accepting...' : 'Accept Job'}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.declineButton}
+                  activeOpacity={0.86}
+                  disabled={actionLoading}
+                  onPress={async () => {
+                    setActionLoading(true);
+                    try {
+                      await apiFetch(`/orders/${activeOrder.id}/decline`, { method: 'POST' });
+                      setIsLocked(true);
+                      setActiveOrder((prev: any) => ({ ...prev, status: 'DECLINED' }));
+                      Alert.alert('Job Declined', 'You have declined this job request.');
+                    } catch (err: any) {
+                      Alert.alert('Error', err.message || 'Failed to decline order.');
+                    } finally {
+                      setActionLoading(false);
+                    }
+                  }}
+                >
+                  <MaterialCommunityIcons name="close-circle-outline" size={16} color="#DC2626" />
+                  <Text style={styles.declineButtonText}>Decline</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.buyerPendingBanner}>
+              <MaterialCommunityIcons name="clock-outline" size={20} color="#D97706" />
+              <Text style={styles.buyerPendingText}>
+                ⏳ Hire request sent (₹6 fee paid). Waiting for freelancer to accept...
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {activeOrder && activeOrder.status === 'IN_PROGRESS' && (
+        <View style={styles.acceptedBanner}>
+          <MaterialCommunityIcons name="check-decagram" size={18} color="#059669" />
+          <Text style={styles.acceptedBannerText}>Order Accepted — Project Status: IN_PROGRESS</Text>
+        </View>
+      )}
+
+      {isLocked && !activeOrder?.status?.includes('PENDING') && (
         <View style={styles.lockedBanner}>
           <View style={styles.lockedBannerContent}>
             <MaterialCommunityIcons name="lock-outline" size={22} color="#D97706" />
@@ -651,5 +743,109 @@ const styles = StyleSheet.create({
     ...Typography.bodySmall,
     color: '#fff',
     fontWeight: '800',
+  },
+  actionBannerWrap: {
+    marginHorizontal: Spacing.base,
+    marginBottom: Spacing.xs,
+  },
+  actionRequestBanner: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#93C5FD',
+    borderWidth: 1,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: 12,
+    borderRadius: BorderRadius.md,
+  },
+  actionBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  actionBannerTitle: {
+    ...Typography.body,
+    color: '#1E40AF',
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  actionBannerSub: {
+    ...Typography.bodySmall,
+    color: '#1E3A8A',
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  acceptButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.full,
+    paddingVertical: 9,
+    paddingHorizontal: Spacing.base,
+  },
+  acceptButtonText: {
+    ...Typography.bodySmall,
+    color: '#fff',
+    fontWeight: '800',
+  },
+  declineButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
+    borderRadius: BorderRadius.full,
+    paddingVertical: 9,
+    paddingHorizontal: Spacing.base,
+  },
+  declineButtonText: {
+    ...Typography.bodySmall,
+    color: '#DC2626',
+    fontWeight: '800',
+  },
+  buyerPendingBanner: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#F59E0B',
+    borderWidth: 1,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: 10,
+    borderRadius: BorderRadius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  buyerPendingText: {
+    ...Typography.bodySmall,
+    color: '#92400E',
+    fontWeight: '700',
+    flex: 1,
+  },
+  acceptedBanner: {
+    backgroundColor: '#D1FAE5',
+    borderColor: '#6EE7B7',
+    borderWidth: 1,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: 8,
+    marginHorizontal: Spacing.base,
+    marginBottom: Spacing.xs,
+    borderRadius: BorderRadius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  acceptedBannerText: {
+    ...Typography.bodySmall,
+    color: '#065F46',
+    fontWeight: '800',
+    flex: 1,
   },
 });

@@ -175,7 +175,7 @@ router.post('/razorpay/verify-signature', authenticateToken, async (req, res) =>
       await createNotification({
         userId: order.sellerId,
         title: "New Job Request! 🔔",
-        message: `${updatedOrder.buyer?.name || updatedOrder.buyer?.username || 'A student'} paid the ₹${order.bookingFee || 6} platform booking fee for '${updatedOrder.gig?.title || 'your gig'}'. Please accept or decline.`,
+        message: `${updatedOrder.buyer?.name || updatedOrder.buyer?.username || 'A student'} paid the ₹${order.bookingFee || 6} booking fee for '${updatedOrder.gig?.title || 'your gig'}'. Tap to view request in chat.`,
         type: "ORDER_REQUEST",
         relatedId: orderId,
       });

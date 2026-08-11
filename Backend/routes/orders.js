@@ -64,7 +64,7 @@ router.post('/', authenticateToken, async (req, res) => {
       await createNotification({
         userId: gig.sellerId,
         title: "New Job Request! 🔔",
-        message: `${buyer?.name || buyer?.username || 'A student'} placed an order for '${gig.title}' (₹6 platform fee paid). Please accept or decline.`,
+        message: `${buyer?.name || buyer?.username || 'A student'} placed an order for '${gig.title}' (₹6 booking fee paid). Tap to view request in chat.`,
         type: "ORDER_REQUEST",
         relatedId: order.id
       });

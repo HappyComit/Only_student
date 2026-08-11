@@ -345,32 +345,13 @@ function NotificationCard({
     item?.rawType === 'ORDER_REQUEST' || item?.rawType === 'PAYMENT_BOOKING';
 
   const isDeclined =
-    item?.rawType === 'ORDER_DECLINED' ||
-    (isOrderRequestType && status === 'DECLINED') ||
-    (!isOrderRequestType && (
-      status === 'DECLINED' ||
-      item?.title?.toLowerCase().includes('declined') ||
-      item?.body?.toLowerCase().includes('declined')
-    ));
+    item?.rawType === 'ORDER_DECLINED' || status === 'DECLINED';
 
   const isAccepted =
-    item?.rawType === 'ORDER_ACCEPTED' ||
-    (isOrderRequestType && (status === 'IN_PROGRESS' || status === 'ACCEPTED')) ||
-    (!isOrderRequestType && (
-      status === 'IN_PROGRESS' ||
-      status === 'ACCEPTED' ||
-      item?.title?.toLowerCase().includes('accepted') ||
-      item?.body?.toLowerCase().includes('accepted')
-    ));
+    item?.rawType === 'ORDER_ACCEPTED' || status === 'IN_PROGRESS' || status === 'ACCEPTED';
 
   const isCompleted =
-    item?.rawType === 'ORDER_COMPLETED' ||
-    (isOrderRequestType && status === 'COMPLETED') ||
-    (!isOrderRequestType && (
-      status === 'COMPLETED' ||
-      item?.title?.toLowerCase().includes('completed') ||
-      item?.body?.toLowerCase().includes('completed')
-    ));
+    item?.rawType === 'ORDER_COMPLETED' || status === 'COMPLETED';
 
   // Check if this specific order has already been acted upon (from orderStatusMap or local status)
   const orderAlreadyActedUpon =
@@ -378,14 +359,7 @@ function NotificationCard({
 
   const isPendingOrderRequest =
     !orderAlreadyActedUpon &&
-    (isOrderRequestType ||
-      status === 'PENDING_ACCEPTANCE' ||
-      status === 'PENDING' ||
-      item?.title?.toLowerCase().includes('job request') ||
-      item?.title?.toLowerCase().includes('order request') ||
-      item?.body?.toLowerCase().includes('placed an order') ||
-      item?.body?.toLowerCase().includes('accept or decline') ||
-      item?.body?.toLowerCase().includes('accept or reject'));
+    (isOrderRequestType || status === 'PENDING_ACCEPTANCE' || status === 'PENDING');
 
   return (
     <View style={[styles.notificationCard, unread && styles.notificationCardUnread]}>
@@ -830,28 +804,14 @@ export default function NotificationsScreen() {
           selectedOrderStatus === 'DECLINED' || selectedOrderStatus === 'IN_PROGRESS' || selectedOrderStatus === 'ACCEPTED' || selectedOrderStatus === 'COMPLETED';
 
         const isDeclined =
-          selectedNotif.rawType === 'ORDER_DECLINED' ||
-          (selectedIsOrderRequest && selectedOrderStatus === 'DECLINED') ||
-          (!selectedIsOrderRequest && (
-            selectedNotif.title?.toLowerCase().includes('declined') ||
-            selectedNotif.body?.toLowerCase().includes('declined')
-          ));
+          selectedNotif.rawType === 'ORDER_DECLINED' || selectedOrderStatus === 'DECLINED';
 
         const isAccepted =
-          selectedNotif.rawType === 'ORDER_ACCEPTED' ||
-          (selectedIsOrderRequest && (selectedOrderStatus === 'IN_PROGRESS' || selectedOrderStatus === 'ACCEPTED')) ||
-          (!selectedIsOrderRequest && (
-            selectedNotif.title?.toLowerCase().includes('accepted') ||
-            selectedNotif.body?.toLowerCase().includes('accepted')
-          ));
+          selectedNotif.rawType === 'ORDER_ACCEPTED' || selectedOrderStatus === 'IN_PROGRESS' || selectedOrderStatus === 'ACCEPTED';
 
         const isPendingOrderRequest =
           !selectedAlreadyActedUpon &&
-          (selectedIsOrderRequest ||
-            selectedNotif.title?.toLowerCase().includes('job request') ||
-            selectedNotif.title?.toLowerCase().includes('order request') ||
-            selectedNotif.body?.toLowerCase().includes('accept or decline') ||
-            selectedNotif.body?.toLowerCase().includes('accept or reject'));
+          (selectedIsOrderRequest || selectedOrderStatus === 'PENDING_ACCEPTANCE' || selectedOrderStatus === 'PENDING');
 
         return (
           <Modal visible transparent animationType="fade" onRequestClose={() => setSelectedNotif(null)}>

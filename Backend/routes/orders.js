@@ -59,14 +59,16 @@ router.post('/', authenticateToken, async (req, res) => {
       }
     });
 
-    // Notify seller of new hire request
-    await createNotification({
-      userId: gig.sellerId,
-      title: "New Job Request! 🔔",
-      message: `${buyer?.name || buyer?.username || 'A student'} placed an order for '${gig.title}' (₹6 platform fee paid). Please accept or decline.`,
-      type: "ORDER_REQUEST",
-      relatedId: order.id
-    });
+    // Notify seller of new hire request ONLY if booking fee was paid upfront
+    if (isFeePaid) {
+      await createNotification({
+        userId: gig.sellerId,
+        title: "New Job Request! 🔔",
+        message: `${buyer?.name || buyer?.username || 'A student'} placed an order for '${gig.title}' (₹6 platform fee paid). Please accept or decline.`,
+        type: "ORDER_REQUEST",
+        relatedId: order.id
+      });
+    }
 
     return res.status(201).json({
       message: "Hire request placed successfully! Sent to seller for acceptance.",

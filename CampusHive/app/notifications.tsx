@@ -339,36 +339,39 @@ function NotificationCard({
   const tone = TYPE_CONFIG[item?.type as NotificationType] || TYPE_CONFIG.order;
   const status = orderStatus || item?.orderStatus || item?.status || '';
 
-  // For ORDER_REQUEST notifications, always show Accept/Decline buttons
+  // For ORDER_REQUEST notifications, check if the order has been acted upon
   const isOrderRequestType =
     item?.rawType === 'ORDER_REQUEST' || item?.rawType === 'PAYMENT_BOOKING';
 
   const isDeclined =
-    !isOrderRequestType && (
+    item?.rawType === 'ORDER_DECLINED' ||
+    (isOrderRequestType && status === 'DECLINED') ||
+    (!isOrderRequestType && (
       status === 'DECLINED' ||
-      item?.rawType === 'ORDER_DECLINED' ||
       item?.title?.toLowerCase().includes('declined') ||
       item?.body?.toLowerCase().includes('declined')
-    );
+    ));
 
   const isAccepted =
-    !isOrderRequestType && (
+    item?.rawType === 'ORDER_ACCEPTED' ||
+    (isOrderRequestType && (status === 'IN_PROGRESS' || status === 'ACCEPTED')) ||
+    (!isOrderRequestType && (
       status === 'IN_PROGRESS' ||
       status === 'ACCEPTED' ||
-      item?.rawType === 'ORDER_ACCEPTED' ||
       item?.title?.toLowerCase().includes('accepted') ||
       item?.body?.toLowerCase().includes('accepted')
-    );
+    ));
 
   const isCompleted =
-    !isOrderRequestType && (
+    item?.rawType === 'ORDER_COMPLETED' ||
+    (isOrderRequestType && status === 'COMPLETED') ||
+    (!isOrderRequestType && (
       status === 'COMPLETED' ||
-      item?.rawType === 'ORDER_COMPLETED' ||
       item?.title?.toLowerCase().includes('completed') ||
       item?.body?.toLowerCase().includes('completed')
-    );
+    ));
 
-  // Check if this specific order has already been acted upon (from orderStatusMap)
+  // Check if this specific order has already been acted upon (from orderStatusMap or local status)
   const orderAlreadyActedUpon =
     status === 'DECLINED' || status === 'IN_PROGRESS' || status === 'ACCEPTED' || status === 'COMPLETED';
 
@@ -826,18 +829,20 @@ export default function NotificationsScreen() {
           selectedOrderStatus === 'DECLINED' || selectedOrderStatus === 'IN_PROGRESS' || selectedOrderStatus === 'ACCEPTED' || selectedOrderStatus === 'COMPLETED';
 
         const isDeclined =
-          !selectedIsOrderRequest && (
-            selectedNotif.rawType === 'ORDER_DECLINED' ||
+          selectedNotif.rawType === 'ORDER_DECLINED' ||
+          (selectedIsOrderRequest && selectedOrderStatus === 'DECLINED') ||
+          (!selectedIsOrderRequest && (
             selectedNotif.title?.toLowerCase().includes('declined') ||
             selectedNotif.body?.toLowerCase().includes('declined')
-          );
+          ));
 
         const isAccepted =
-          !selectedIsOrderRequest && (
-            selectedNotif.rawType === 'ORDER_ACCEPTED' ||
+          selectedNotif.rawType === 'ORDER_ACCEPTED' ||
+          (selectedIsOrderRequest && (selectedOrderStatus === 'IN_PROGRESS' || selectedOrderStatus === 'ACCEPTED')) ||
+          (!selectedIsOrderRequest && (
             selectedNotif.title?.toLowerCase().includes('accepted') ||
             selectedNotif.body?.toLowerCase().includes('accepted')
-          );
+          ));
 
         const isPendingOrderRequest =
           !selectedAlreadyActedUpon &&

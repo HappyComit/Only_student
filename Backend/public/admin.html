@@ -582,6 +582,7 @@
             <tr>
               <th>Student User</th>
               <th>Email Address</th>
+              <th>Phone</th>
               <th>Account Role</th>
               <th>University</th>
               <th>Verified Status</th>
@@ -589,7 +590,7 @@
             </tr>
           </thead>
           <tbody id="usersTableBody">
-            <tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Loading student users...</td></tr>
+            <tr><td colspan="7" style="text-align:center; color: var(--text-muted);">Loading student users...</td></tr>
           </tbody>
         </table>
       </div>
@@ -711,7 +712,7 @@
     function renderUsers(users) {
       const tbody = document.getElementById('usersTableBody');
       if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">No users found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted);">No users found.</td></tr>';
         return;
       }
       tbody.innerHTML = users.map(u => {
@@ -732,6 +733,7 @@
               </div>
             </td>
             <td>${u.email}</td>
+            <td style="font-size: 13px; color: var(--text-muted);">${u.phone || '—'}</td>
             <td><span class="status-pill ${u.isSeller ? 'status-completed' : 'status-pending'}">${u.isSeller ? 'Freelancer' : 'Client'}</span></td>
             <td>${u.university || 'Chandigarh University'}</td>
             <td>
@@ -821,6 +823,7 @@
         (u.name || '').toLowerCase().includes(query) ||
         (u.username || '').toLowerCase().includes(query) ||
         (u.email || '').toLowerCase().includes(query) ||
+        (u.phone || '').toLowerCase().includes(query) ||
         (u.university || '').toLowerCase().includes(query)
       );
 
@@ -847,9 +850,9 @@
         alert("No student user data available to export.");
         return;
       }
-      let csv = "ID,Name,Username,Email,Role,Verified,University,Created At\n";
+      let csv = "ID,Name,Username,Email,Phone,Role,Verified,University,Created At\n";
       globalUsers.forEach(u => {
-        csv += `"${u.id}","${u.name || ''}","${u.username || ''}","${u.email}","${u.isSeller ? 'Freelancer' : 'Client'}","${u.isVerified ? 'Yes' : 'No'}","${u.university || 'Chandigarh University'}","${u.createdAt}"\n`;
+        csv += `"${u.id}","${u.name || ''}","${u.username || ''}","${u.email}","${u.phone || ''}","${u.isSeller ? 'Freelancer' : 'Client'}","${u.isVerified ? 'Yes' : 'No'}","${u.university || 'Chandigarh University'}","${u.createdAt}"\n`;
       });
       downloadFile(csv, "CampusHive_Students_Export.csv", "text/csv");
     }

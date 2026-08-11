@@ -408,7 +408,7 @@ export default function PostServiceScreen() {
         }),
       });
 
-      Alert.alert('Service Published', 'Your service is now live in the marketplace with Supabase Cloud Storage photo.', [
+      Alert.alert('Service Published 🎉', 'Your service is now live in the marketplace!', [
         {
           text: 'View Marketplace',
           onPress: () => router.replace('/(tabs)/marketplace'),

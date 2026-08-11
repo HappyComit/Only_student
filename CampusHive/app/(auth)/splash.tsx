@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { getToken, isGuestUser, getOnboardingCompleted } from '@/constants/api';
 
 export default function SplashScreen() {
   const logoScale = useRef(new Animated.Value(0.3)).current;
@@ -39,8 +40,29 @@ export default function SplashScreen() {
       ]),
     ]).start();
 
+    const determineInitialRoute = async () => {
+      try {
+        const token = await getToken();
+        const isGuest = await isGuestUser();
+        if (token || isGuest) {
+          router.replace('/(tabs)');
+          return;
+        }
+
+        const completedOnboarding = await getOnboardingCompleted();
+        if (completedOnboarding) {
+          router.replace('/(auth)/auth');
+        } else {
+          router.replace('/(auth)/onboarding');
+        }
+      } catch (error) {
+        console.error('Error determining initial route:', error);
+        router.replace('/(auth)/onboarding');
+      }
+    };
+
     const timer = setTimeout(() => {
-      router.replace('/(auth)/onboarding');
+      determineInitialRoute();
     }, 2800);
 
     return () => clearTimeout(timer);

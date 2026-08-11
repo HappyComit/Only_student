@@ -13,6 +13,7 @@ import { router } from 'expo-router';
 import { communities } from '@/data/mockData';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import NotificationBell from '@/components/ui/NotificationBell';
 
 type Segment = 'all' | 'following' | 'discover';
 
@@ -180,7 +181,7 @@ export default function CommunitiesScreen() {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Communities" subtitle="Find your tribe on campus" />
+      <ScreenHeader title="Communities" subtitle="Find your tribe on campus" action={<NotificationBell color={Colors.text} />} />
 
       <FlatList
         data={filteredCommunities}

@@ -33,6 +33,7 @@ model User {
   skills       String?                      // Comma-separated list of skills (e.g., "Figma, React Native")
   responseTime String?                      // Average reply time (e.g., "~2 hrs")
   isVerified   Boolean  @default(false)     // True if the student is a verified developer/designer
+  phone        String?                      // Student's phone number (e.g., "+91 9876543210")
   resetOtp     String?                      // 6-digit password reset OTP
   resetOtpExpires DateTime?                 // Expiration timestamp for reset OTP
 

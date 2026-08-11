@@ -40,7 +40,6 @@ export default function FreelancerProfile() {
   const [reviewsList, setReviewsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submittingOrder, setSubmittingOrder] = useState(false);
-  const [checkingChat, setCheckingChat] = useState(false);
 
   const [razorpayModalVisible, setRazorpayModalVisible] = useState(false);
   const [razorpayData, setRazorpayData] = useState<{
@@ -186,11 +185,26 @@ export default function FreelancerProfile() {
 
       Alert.alert(
         '₹6 Fee Paid & Request Sent! 🎉',
-        `Your hire request for "${gig?.title}" (₹6 platform fee verified via Razorpay) has been sent! The seller will review and accept your request.`,
+        `Your hire request for "${gig?.title}" (₹6 platform fee verified via Razorpay) has been sent! You can now chat with the freelancer.`,
         [
           {
-            text: 'Track Request',
-            onPress: () => router.replace('/earnings'),
+            text: 'Open Chat',
+            onPress: () => {
+              if (freelancer) {
+                router.push({
+                  pathname: '/chats/[id]',
+                  params: {
+                    id: `new-${freelancer.id}`,
+                    freelancerId: freelancer.id,
+                    freelancerName: freelancer.name,
+                    freelancerAvatar: freelancer.avatar,
+                    projectTitle: gig?.title,
+                  },
+                });
+              } else {
+                router.replace('/earnings');
+              }
+            },
           },
         ]
       );
@@ -206,10 +220,10 @@ export default function FreelancerProfile() {
     Alert.alert('Payment Failed ❌', errorMsg || 'Transaction was not completed.');
   };
 
-  const handleMessagePress = async () => {
+  const handleMessagePress = () => {
     if (!freelancer || !gig) return;
 
-    // Fast sync check — currentUserId is already fetched on mount, no async needed
+    // Fast sync check — currentUserId is already fetched on mount
     if (!currentUserId) {
       Alert.alert(
         'Sign In Required 🔒',
@@ -230,56 +244,17 @@ export default function FreelancerProfile() {
       return;
     }
 
-    // Check if the user has paid the ₹6 platform fee before allowing chat
-    setCheckingChat(true);
-    try {
-      const data = await apiFetch<{ isLocked?: boolean }>(`/messages/${freelancer.id}`);
-
-      if (data?.isLocked) {
-        // Payment gate — show notification immediately instead of navigating
-        Alert.alert(
-          'Payment Required 🔒',
-          'You must hire this freelancer and pay the ₹6 platform booking fee before you can start a conversation.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Hire Now',
-              onPress: handleOrder,
-              style: 'default',
-            },
-          ]
-        );
-        return;
-      }
-
-      // Chat is unlocked — navigate to the conversation
-      router.push({
-        pathname: '/chats/[id]',
-        params: {
-          id: `new-${freelancer.id}`,
-          freelancerId: freelancer.id,
-          freelancerName: freelancer.name,
-          freelancerAvatar: freelancer.avatar,
-          projectTitle: gig.title,
-        },
-      });
-    } catch (err: any) {
-      // On network error, show the payment gate as a safe default
-      Alert.alert(
-        'Payment Required 🔒',
-        'You must hire this freelancer and pay the ₹6 platform booking fee before you can start a conversation.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Hire Now',
-            onPress: handleOrder,
-            style: 'default',
-          },
-        ]
-      );
-    } finally {
-      setCheckingChat(false);
-    }
+    // Always navigate to chat — the chat screen handles the lock state itself
+    router.push({
+      pathname: '/chats/[id]',
+      params: {
+        id: `new-${freelancer.id}`,
+        freelancerId: freelancer.id,
+        freelancerName: freelancer.name,
+        freelancerAvatar: freelancer.avatar,
+        projectTitle: gig.title,
+      },
+    });
   };
 
   const freelancer = useMemo(() => {
@@ -452,16 +427,9 @@ export default function FreelancerProfile() {
             style={[styles.quickActionButton, styles.quickActionSecondary]}
             activeOpacity={0.86}
             onPress={handleMessagePress}
-            disabled={checkingChat}
           >
-            {checkingChat ? (
-              <ActivityIndicator size="small" color={Colors.primaryDark} />
-            ) : (
-              <>
-                <MaterialCommunityIcons name="message-outline" size={16} color={Colors.primaryDark} />
-                <Text style={styles.quickActionSecondaryText}>Message</Text>
-              </>
-            )}
+            <MaterialCommunityIcons name="message-outline" size={16} color={Colors.primaryDark} />
+            <Text style={styles.quickActionSecondaryText}>Message</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

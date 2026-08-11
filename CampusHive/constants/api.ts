@@ -78,6 +78,29 @@ export const removeToken = async () => {
 };
 
 /**
+ * Saves onboarding completion status so returning users skip onboarding slides.
+ */
+export const setOnboardingCompleted = async () => {
+  try {
+    await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
+  } catch (error) {
+    console.error('Error saving onboarding status:', error);
+  }
+};
+
+/**
+ * Checks if the user has already completed or skipped onboarding slides.
+ */
+export const getOnboardingCompleted = async (): Promise<boolean> => {
+  try {
+    const flag = await AsyncStorage.getItem('hasCompletedOnboarding');
+    return flag === 'true';
+  } catch (error) {
+    return false;
+  }
+};
+
+/**
  * Helper delay function for exponential backoff
  */
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

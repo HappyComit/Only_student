@@ -4,6 +4,8 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
+const { createNotification } = require('./notifications');
+const { getIO } = require('../socket');
 
 // Initialize Razorpay client with environment credentials
 const razorpay = new Razorpay({
@@ -164,9 +166,28 @@ router.post('/razorpay/verify-signature', authenticateToken, async (req, res) =>
         data: {
           bookingFeePaid: true,
           bookingTransactionId: razorpay_payment_id,
-          status: "IN_PROGRESS",
+          status: "PENDING_ACCEPTANCE",
         },
+        include: { gig: { select: { title: true } }, buyer: { select: { name: true, username: true } } },
       });
+
+      // Notify seller of new hire request (booking fee paid)
+      await createNotification({
+        userId: order.sellerId,
+        title: "New Job Request! 🔔",
+        message: `${updatedOrder.buyer?.name || updatedOrder.buyer?.username || 'A student'} paid the ₹${order.bookingFee || 6} platform booking fee for '${updatedOrder.gig?.title || 'your gig'}'. Please accept or decline.`,
+        type: "ORDER_REQUEST",
+        relatedId: orderId,
+      });
+
+      // Emit real-time chat unlock event so the chat screen auto-unlocks without reload
+      const io = getIO();
+      if (io) {
+        io.to(`user:${order.buyerId}`).to(`user:${order.sellerId}`).emit('chat_unlocked', {
+          buyerId: order.buyerId,
+          sellerId: order.sellerId,
+        });
+      }
     } else if (paymentType === 'gig') {
       updatedOrder = await prisma.order.update({
         where: { id: orderId },
@@ -175,6 +196,16 @@ router.post('/razorpay/verify-signature', authenticateToken, async (req, res) =>
           gigTransactionId: razorpay_payment_id,
           status: "COMPLETED",
         },
+        include: { gig: { select: { title: true } }, buyer: { select: { name: true, username: true } } },
+      });
+
+      // Notify seller of final payment completion
+      await createNotification({
+        userId: order.sellerId,
+        title: "Payment Received & Order Completed! 💰",
+        message: `${updatedOrder.buyer?.name || updatedOrder.buyer?.username || 'Buyer'} completed the final ₹${order.price} payment for '${updatedOrder.gig?.title || 'your gig'}'. The project is officially completed!`,
+        type: "PAYMENT_COMPLETED",
+        relatedId: orderId,
       });
     }
 

@@ -25,6 +25,10 @@ export default function NotificationBell({
       const res = await apiFetch('/notifications');
       if (res && typeof res.unreadCount === 'number') {
         setUnreadCount(res.unreadCount);
+      } else if (res && Array.isArray(res.notifications)) {
+        // Fallback: count unread from notifications array
+        const count = res.notifications.filter((n: any) => !n.isRead).length;
+        setUnreadCount(count);
       }
     } catch {
       // Ignore background fetch errors silently

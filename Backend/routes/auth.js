@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
 const { sanitize, sanitizeFields } = require('../middleware/sanitize');
+const { authRateLimiter } = require('../middleware/rateLimiter');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('FATAL: JWT_SECRET environment variable is not set');
@@ -28,7 +29,8 @@ router.post('/register', async (req, res) => {
       department,
       year,
       skills,
-      responseTime
+      responseTime,
+      phone
     } = req.body;
 
     // 1. Basic validation: Make sure essential fields are filled
@@ -60,7 +62,7 @@ router.post('/register', async (req, res) => {
     // 5. Create and save the new user to the SQLite database
     const safe = sanitizeFields(req.body, {
       name: 100, bio: 500, university: 150, department: 150,
-      year: 20, skills: 500, responseTime: 30, upiId: 50
+      year: 20, skills: 500, responseTime: 30, upiId: 50, phone: 20
     });
 
     const newUser = await prisma.user.create({
@@ -79,6 +81,7 @@ router.post('/register', async (req, res) => {
         year: safe.year || null,
         skills: safe.skills || null,
         responseTime: safe.responseTime || null,
+        phone: safe.phone || null,
         isVerified: false // Default to false upon registration
       }
     });
@@ -101,6 +104,7 @@ router.post('/register', async (req, res) => {
         year: newUser.year,
         skills: newUser.skills,
         responseTime: newUser.responseTime,
+        phone: newUser.phone,
         isVerified: newUser.isVerified,
         createdAt: newUser.createdAt
       }
@@ -116,7 +120,7 @@ router.post('/register', async (req, res) => {
  * @route   POST /api/auth/login
  * @desc    Logs in user & returns session token and full profile info
  */
-router.post('/login', async (req, res) => {
+router.post('/login', authRateLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -177,6 +181,7 @@ router.post('/login', async (req, res) => {
         year: user.year,
         skills: user.skills,
         responseTime: user.responseTime,
+        phone: user.phone,
         isVerified: user.isVerified,
         createdAt: user.createdAt
       }
@@ -205,7 +210,7 @@ const transporter = nodemailer.createTransport({
  * @route   POST /api/auth/forgot-password
  * @desc    Generates 6-digit OTP and sends email for password reset
  */
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', authRateLimiter, async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -348,6 +353,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
         year: user.year,
         skills: user.skills,
         responseTime: user.responseTime,
+        phone: user.phone,
         isVerified: user.isVerified,
         createdAt: user.createdAt
       }
@@ -375,13 +381,14 @@ router.put('/profile', authenticateToken, async (req, res) => {
       year,
       skills,
       responseTime,
-      isVerified
+      isVerified,
+      phone
     } = req.body;
 
     // Sanitize user-submitted text fields
     const safe = sanitizeFields(req.body, {
       name: 100, bio: 500, university: 150, department: 150,
-      year: 20, skills: 500, responseTime: 30, upiId: 50
+      year: 20, skills: 500, responseTime: 30, upiId: 50, phone: 20
     });
 
     // Update user record in database
@@ -400,6 +407,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
         year: safe.year !== undefined ? safe.year : undefined,
         skills: safe.skills !== undefined ? safe.skills : undefined,
         responseTime: safe.responseTime !== undefined ? safe.responseTime : undefined,
+        phone: safe.phone !== undefined ? safe.phone : undefined,
         isVerified: isVerified !== undefined ? isVerified : undefined
       }
     });
@@ -421,6 +429,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
         year: updatedUser.year,
         skills: updatedUser.skills,
         responseTime: updatedUser.responseTime,
+        phone: updatedUser.phone,
         isVerified: updatedUser.isVerified,
         createdAt: updatedUser.createdAt
       }
@@ -478,6 +487,7 @@ router.get('/admin/stats', authenticateToken, async (req, res) => {
         year: u.year || "1st Year",
         avatar: u.avatarUrl || `https://i.pravatar.cc/150?img=${Math.abs(u.username.charCodeAt(0) % 70) || 12}`,
         isVerified: false,
+        phone: u.phone || null,
         responseTime: u.responseTime || "~2 hrs"
       })),
       verifiedList: verifiedFreelancers.map(u => ({
@@ -488,6 +498,7 @@ router.get('/admin/stats', authenticateToken, async (req, res) => {
         year: u.year || "3rd Year",
         avatar: u.avatarUrl || `https://i.pravatar.cc/150?img=${Math.abs(u.username.charCodeAt(0) % 70) || 12}`,
         isVerified: true,
+        phone: u.phone || null,
         rating: 4.9,
         completedOrders: 14,
         responseTime: u.responseTime || "~2 hrs"

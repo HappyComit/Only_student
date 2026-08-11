@@ -1,6 +1,5 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Alert,
   Animated,
   FlatList,
   KeyboardAvoidingView,
@@ -183,11 +182,22 @@ export default function ChatDetailsScreen() {
         }
       };
 
-      sock.on('new_message', handleNewMessage);
+      // Listen for real-time chat unlock after payment succeeds
+      const handleChatUnlocked = (data: { buyerId: string; sellerId: string }) => {
+        const isRelevant =
+          data.buyerId === partnerId || data.sellerId === partnerId;
+        if (isRelevant) {
+          setIsLocked(false);
+        }
+      };
 
-      // Cleanup listener on unmount
+      sock.on('new_message', handleNewMessage);
+      sock.on('chat_unlocked', handleChatUnlocked);
+
+      // Cleanup listeners on unmount
       return () => {
         sock.off('new_message', handleNewMessage);
+        sock.off('chat_unlocked', handleChatUnlocked);
       };
     };
 
@@ -212,13 +222,7 @@ export default function ChatDetailsScreen() {
   };
 
   const handleSend = async () => {
-    if (isLocked) {
-      Alert.alert(
-        'Chat Locked 🔒',
-        'You must place a hire request (₹6 platform booking fee) with this seller to unlock direct messaging.'
-      );
-      return;
-    }
+    if (isLocked) return; // Input is already disabled; this is a safety guard
 
     const text = draft.trim();
     if (!text) {
@@ -359,9 +363,9 @@ export default function ChatDetailsScreen() {
           <View style={styles.lockedBannerContent}>
             <MaterialCommunityIcons name="lock-outline" size={22} color="#D97706" />
             <View style={{ flex: 1 }}>
-              <Text style={styles.lockedBannerTitle}>Chat Locked 🔒</Text>
+              <Text style={styles.lockedBannerTitle}>🔒 Chat Locked</Text>
               <Text style={styles.lockedBannerText}>
-                You must hire this freelancer and pay the ₹6 platform booking fee to unlock direct messaging.
+                Please complete the ₹6 booking fee to start chatting with this freelancer.
               </Text>
             </View>
           </View>

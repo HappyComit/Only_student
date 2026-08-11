@@ -37,7 +37,8 @@ router.post('/', authenticateToken, async (req, res) => {
           { buyerId: senderId, sellerId: receiverId },
           { buyerId: receiverId, sellerId: senderId }
         ],
-        status: { in: ['PENDING', 'PENDING_ACCEPTANCE', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'] }
+        bookingFeePaid: true,
+        status: { in: ['PENDING_ACCEPTANCE', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'] }
       }
     });
 
@@ -210,7 +211,8 @@ router.get('/:userId', authenticateToken, async (req, res) => {
             { buyerId: senderId, sellerId: receiverId },
             { buyerId: receiverId, sellerId: senderId }
           ],
-          status: { in: ['PENDING', 'PENDING_ACCEPTANCE', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'] }
+          bookingFeePaid: true,
+          status: { in: ['PENDING_ACCEPTANCE', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'] }
         }
       }),
 

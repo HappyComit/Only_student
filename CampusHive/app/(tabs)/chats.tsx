@@ -14,6 +14,8 @@ import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Avatar from '@/components/ui/Avatar';
+import ScreenHeader from '@/components/ui/ScreenHeader';
+import NotificationBell from '@/components/ui/NotificationBell';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/theme';
 import { useAppMode } from '@/constants/appMode';
 import { apiFetch } from '@/constants/api';
@@ -150,6 +152,7 @@ export default function ChatsTabScreen() {
 
   return (
     <View style={styles.container}>
+      <ScreenHeader title="Messages" subtitle="Your conversations" action={<NotificationBell color={Colors.text} />} />
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -12,6 +12,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/theme';
 import { apiFetch, getToken } from '@/constants/api';
+import { useFocusEffect } from '@react-navigation/native';
 
 type NotificationType = 'order' | 'community' | 'event' | 'review' | 'payment';
 type FilterType = 'all' | 'unread' | 'payments' | 'community';
@@ -362,6 +363,7 @@ function NotificationCard({
     !isAccepted &&
     !isCompleted &&
     (item?.rawType === 'ORDER_REQUEST' ||
+      item?.rawType === 'PAYMENT_BOOKING' ||
       status === 'PENDING_ACCEPTANCE' ||
       status === 'PENDING' ||
       item?.title?.toLowerCase().includes('job request') ||
@@ -634,8 +636,19 @@ export default function NotificationsScreen() {
           title: n.title,
           body: n.message,
           rawType: n.type,
-          type: n.type?.toLowerCase().includes('order') ? 'order' : n.type?.toLowerCase().includes('payment') ? 'payment' : 'community',
-          icon: n.type?.includes('REQUEST') ? 'bell-ring-outline' : n.type?.includes('ACCEPTED') ? 'check-circle-outline' : n.type?.includes('DECLINED') ? 'close-circle-outline' : 'bell-outline',
+          type: n.type?.toLowerCase().includes('order') ? 'order'
+            : n.type?.toLowerCase().includes('review') ? 'review'
+            : n.type?.toLowerCase().includes('payment') ? 'payment'
+            : n.type?.toLowerCase().includes('community') ? 'community'
+            : 'order',
+          icon: n.type?.includes('REQUEST') ? 'bell-ring-outline'
+            : n.type?.includes('ACCEPTED') ? 'check-circle-outline'
+            : n.type?.includes('DECLINED') ? 'close-circle-outline'
+            : n.type?.includes('DELIVERED') ? 'package-variant-closed'
+            : n.type?.includes('COMPLETED') ? 'check-decagram'
+            : n.type?.includes('REVIEW') ? 'star-outline'
+            : n.type?.includes('PAYMENT') ? 'cash-multiple'
+            : 'bell-outline',
           time: new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           unread: !n.isRead,
           relatedId: n.relatedId,
@@ -651,9 +664,11 @@ export default function NotificationsScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchLiveNotifications();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchLiveNotifications();
+    }, [])
+  );
 
   const unreadCount = useMemo(() => liveList.filter((item) => item.unread).length, [liveList]);
 

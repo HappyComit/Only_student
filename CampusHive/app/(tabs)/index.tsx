@@ -13,6 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { communities, events, freelancers } from '@/data/mockData';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/theme';
 import Avatar from '@/components/ui/Avatar';
+import NotificationBell from '@/components/ui/NotificationBell';
 import SectionHeader from '@/components/ui/SectionHeader';
 import StarRating from '@/components/ui/StarRating';
 import Badge from '@/components/ui/Badge';
@@ -483,7 +484,7 @@ export default function HomeScreen() {
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      <View style={[styles.heroWrap, { paddingTop: insets.top + Spacing.sm }]}> 
+      <View style={[styles.heroWrap, { paddingTop: insets.top + Spacing.sm }]}>
         <View style={styles.heroOrbOne} />
         <View style={styles.heroOrbTwo} />
 
@@ -508,14 +509,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
 
           <View style={styles.heroRightRow}>
-            <TouchableOpacity
-              onPress={() => router.push('/notifications')}
-              activeOpacity={0.86}
-              style={styles.notificationButton}
-            >
-              <MaterialCommunityIcons name="bell-outline" size={22} color={Colors.white} />
-              <View style={styles.notificationDot} />
-            </TouchableOpacity>
+            <NotificationBell />
             <TouchableOpacity
               onPress={() => router.push('/(tabs)/profile')}
               activeOpacity={0.88}
@@ -586,7 +580,7 @@ export default function HomeScreen() {
             activeOpacity={0.9}
             onPress={() => router.push('/(tabs)/marketplace')}
           >
-            <View style={[styles.quickIconWrap, { backgroundColor: '#DBEAFE' }]}> 
+            <View style={[styles.quickIconWrap, { backgroundColor: '#DBEAFE' }]}>
               <MaterialCommunityIcons name="compass-outline" size={20} color={Colors.primaryDark} />
             </View>
             <Text style={styles.quickCardTitle}>Explore services</Text>
@@ -598,7 +592,7 @@ export default function HomeScreen() {
             activeOpacity={0.9}
             onPress={() => router.push('/(tabs)/events')}
           >
-            <View style={[styles.quickIconWrap, { backgroundColor: '#FFE8D5' }]}> 
+            <View style={[styles.quickIconWrap, { backgroundColor: '#FFE8D5' }]}>
               <MaterialCommunityIcons name="calendar-blank-outline" size={20} color="#B45309" />
             </View>
             <Text style={styles.quickCardTitle}>Campus events</Text>
@@ -610,7 +604,7 @@ export default function HomeScreen() {
             activeOpacity={0.9}
             onPress={() => router.push('/(tabs)/communities')}
           >
-            <View style={[styles.quickIconWrap, { backgroundColor: '#DCFCE7' }]}> 
+            <View style={[styles.quickIconWrap, { backgroundColor: '#DCFCE7' }]}>
               <MaterialCommunityIcons name="account-group-outline" size={20} color="#15803D" />
             </View>
             <Text style={styles.quickCardTitle}>Communities</Text>
@@ -622,7 +616,7 @@ export default function HomeScreen() {
             activeOpacity={0.9}
             onPress={() => router.push('/admin')}
           >
-            <View style={[styles.quickIconWrap, { backgroundColor: '#F3E8FF' }]}> 
+            <View style={[styles.quickIconWrap, { backgroundColor: '#F3E8FF' }]}>
               <MaterialCommunityIcons name="shield-crown-outline" size={20} color="#7E22CE" />
             </View>
             <Text style={styles.quickCardTitle}>Admin panel</Text>
@@ -650,8 +644,8 @@ export default function HomeScreen() {
               activeOpacity={0.9}
               style={styles.eventCard}
             >
-              <View style={[styles.eventCardTop, { backgroundColor: event.communityColor + '16' }]}> 
-                <View style={[styles.eventEmojiWrap, { backgroundColor: event.communityColor + '26' }]}> 
+              <View style={[styles.eventCardTop, { backgroundColor: event.communityColor + '16' }]}>
+                <View style={[styles.eventEmojiWrap, { backgroundColor: event.communityColor + '26' }]}>
                   <MaterialCommunityIcons name={event.emoji as any} size={22} color={event.communityColor} />
                 </View>
                 <Badge
@@ -699,73 +693,80 @@ export default function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.horizontalContent}
         >
-          {liveGigs.length > 0
-            ? liveGigs.slice(0, 6).map((gig: any) => (
-                <TouchableOpacity
-                  key={gig.id}
-                  onPress={() => router.push(`/marketplace/${gig.id}`)}
-                  style={styles.freelancerCard}
-                  activeOpacity={0.9}
-                >
-                  <View style={styles.freelancerTopRow}>
-                    <Avatar uri={gig.seller?.avatarUrl || gig.imageUrl} size={50} />
-                    {gig.seller?.isVerified ? (
-                      <MaterialCommunityIcons
-                        name="check-decagram"
-                        size={16}
-                        color={Colors.primary}
-                        style={styles.freelancerVerified}
-                      />
-                    ) : null}
-                  </View>
+          {liveGigs.length > 0 ? (
+            liveGigs.slice(0, 6).map((gig: any) => (
+              <TouchableOpacity
+                key={gig.id}
+                onPress={() => router.push(`/marketplace/${gig.id}`)}
+                style={styles.freelancerCard}
+                activeOpacity={0.9}
+              >
+                <View style={styles.freelancerTopRow}>
+                  <Avatar uri={gig.seller?.avatarUrl || gig.imageUrl} size={50} />
+                  {gig.seller?.isVerified ? (
+                    <MaterialCommunityIcons
+                      name="check-decagram"
+                      size={16}
+                      color={Colors.primary}
+                      style={styles.freelancerVerified}
+                    />
+                  ) : null}
+                </View>
 
-                  <Text style={styles.freelancerName} numberOfLines={1}>
-                    {gig.seller?.name || gig.seller?.username || 'Student Seller'}
-                  </Text>
-                  <Text style={styles.freelancerRole} numberOfLines={2}>
-                    {gig.title}
-                  </Text>
+                <Text style={styles.freelancerName} numberOfLines={1}>
+                  {gig.seller?.name || gig.seller?.username || 'Student Seller'}
+                </Text>
+                <Text style={styles.freelancerRole} numberOfLines={2}>
+                  {gig.title}
+                </Text>
 
-                  <View style={styles.freelancerRatingRow}>
-                    <Badge label={gig.category?.toUpperCase() || 'SERVICE'} variant="info" />
-                  </View>
+                <View style={styles.freelancerRatingRow}>
+                  <Badge label={gig.category?.toUpperCase() || 'SERVICE'} variant="info" />
+                </View>
 
-                  <Text style={styles.freelancerPrice}>Rs. {gig.price}</Text>
-                </TouchableOpacity>
-              ))
-            : featuredFreelancers.map((freelancer) => (
-                <TouchableOpacity
-                  key={freelancer.id}
-                  onPress={() => router.push(`/marketplace/${freelancer.id}`)}
-                  style={styles.freelancerCard}
-                  activeOpacity={0.9}
-                >
-                  <View style={styles.freelancerTopRow}>
-                    <Avatar uri={freelancer.avatar} size={50} />
-                    {freelancer.isVerified ? (
-                      <MaterialCommunityIcons
-                        name="check-decagram"
-                        size={16}
-                        color={Colors.primary}
-                        style={styles.freelancerVerified}
-                      />
-                    ) : null}
-                  </View>
-
-                  <Text style={styles.freelancerName} numberOfLines={1}>
-                    {freelancer.name}
-                  </Text>
-                  <Text style={styles.freelancerRole} numberOfLines={2}>
-                    {freelancer.services[0]?.title || freelancer.role}
-                  </Text>
-
-                  <View style={styles.freelancerRatingRow}>
-                    <Badge label={freelancer.category?.toUpperCase() || 'SERVICE'} variant="info" />
-                  </View>
-
-                  <Text style={styles.freelancerPrice}>Rs. {minServicePrice(freelancer)}</Text>
-                </TouchableOpacity>
-              ))}
+                <Text style={styles.freelancerPrice}>Rs. {gig.price}</Text>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View
+              style={{
+                width: '100%',
+                padding: Spacing.lg,
+                backgroundColor: Colors.surface,
+                borderRadius: BorderRadius.xl,
+                borderWidth: 1,
+                borderColor: Colors.border,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <MaterialCommunityIcons name="store-search-outline" size={36} color={Colors.primary} style={{ marginBottom: 8 }} />
+              <Text style={{ ...Typography.h4, color: Colors.text, textAlign: 'center', marginBottom: 4 }}>
+                No active services posted yet
+              </Text>
+              <Text style={{ ...Typography.bodySmall, color: Colors.textSecondary, textAlign: 'center', marginBottom: 14 }}>
+                Be the first student on campus to post a service and offer your skills!
+              </Text>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: Colors.primary,
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: BorderRadius.full,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+                onPress={() => router.push('/post-service')}
+                activeOpacity={0.85}
+              >
+                <MaterialCommunityIcons name="plus-circle" size={18} color={Colors.white} />
+                <Text style={{ ...Typography.bodySmall, color: Colors.white, fontWeight: '700' }}>
+                  Post First Service
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
       </View>
 
@@ -783,7 +784,7 @@ export default function HomeScreen() {
             activeOpacity={0.9}
             style={styles.communityRow}
           >
-            <View style={[styles.communityIconWrap, { backgroundColor: item.community.color + '18' }]}> 
+            <View style={[styles.communityIconWrap, { backgroundColor: item.community.color + '18' }]}>
               <MaterialCommunityIcons
                 name={item.community.emoji as any}
                 size={20}

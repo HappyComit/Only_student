@@ -399,7 +399,7 @@ export default function MarketplaceScreen() {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Marketplace" subtitle="Find trusted campus professionals" />
+      <ScreenHeader title="Marketplace" subtitle="Find trusted campus professionals" action={<NotificationBell color={Colors.text} />} />
 
       <FlatList
         data={filteredFreelancers}

@@ -121,6 +121,7 @@ export default function ProfileScreen() {
   const [editYear, setEditYear] = useState('');
   const [editUpiId, setEditUpiId] = useState('');
   const [editSkills, setEditSkills] = useState('');
+  const [editPhone, setEditPhone] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
 
   const [stats, setStats] = useState<any>({ completedOrders: 0, earnings: 0, followers: 0, following: 0 });
@@ -196,6 +197,7 @@ export default function ProfileScreen() {
     setEditYear(profile?.year || '1st Year');
     setEditUpiId(profile?.upiId || '');
     setEditSkills(profile?.skills || '');
+    setEditPhone(profile?.phone || '');
     setEditModalVisible(true);
   };
 
@@ -215,7 +217,8 @@ export default function ProfileScreen() {
           department: editDepartment.trim(),
           year: editYear,
           upiId: editUpiId.trim(),
-          skills: editSkills.trim()
+          skills: editSkills.trim(),
+          phone: editPhone.trim() || null,
         })
       });
       setProfile(data.user);
@@ -269,9 +272,9 @@ export default function ProfileScreen() {
         });
 
         setProfile((prev: any) => (prev ? { ...prev, avatarUrl: publicSupabaseUrl } : null));
-        Alert.alert('Photo Updated', 'Your profile picture has been saved to Supabase Cloud Storage!');
+        Alert.alert('Photo Updated 🎉', 'Your profile picture has been updated successfully!');
       } catch (err: any) {
-        Alert.alert('Update Failed', err.message || 'Could not save profile picture to cloud storage.');
+        Alert.alert('Update Failed', err.message || 'Could not update profile picture.');
       } finally {
         setLoading(false);
       }
@@ -377,6 +380,11 @@ export default function ProfileScreen() {
               {profile?.upiId ? (
                 <Text style={[styles.profileMeta, { color: Colors.primary, fontWeight: '700', marginTop: 2 }]}>
                   UPI: {profile.upiId}
+                </Text>
+              ) : null}
+              {profile?.phone ? (
+                <Text style={[styles.profileMeta, { color: Colors.textSecondary, fontWeight: '600', marginTop: 2 }]}>
+                  📱 {profile.phone}
                 </Text>
               ) : null}
               <View style={styles.domainPill}>
@@ -602,6 +610,16 @@ export default function ProfileScreen() {
                 onChangeText={setEditUpiId}
                 placeholder="e.g. yourname@okaxis or 9876543210@paytm"
                 autoCapitalize="none"
+              />
+
+              <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>Phone Number</Text>
+              <TextInput
+                style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.md, color: Colors.text }}
+                value={editPhone}
+                onChangeText={setEditPhone}
+                placeholder="e.g. 9876543210"
+                keyboardType="phone-pad"
+                maxLength={15}
               />
 
               <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>Bio / Tagline</Text>

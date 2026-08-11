@@ -3,6 +3,7 @@ const router = express.Router();
 const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
 const { sanitize } = require('../middleware/sanitize');
+const { createNotification } = require('./notifications');
 
 /**
  * @route   POST /api/reviews
@@ -58,6 +59,17 @@ router.post('/', authenticateToken, async (req, res) => {
         rating: parseInt(rating),
         comment: sanitize(comment || "", 500)
       }
+    });
+
+    // Notify the seller about the new review
+    const reviewer = await prisma.user.findUnique({ where: { id: reviewerId }, select: { name: true, username: true } });
+    const gig = await prisma.gig.findUnique({ where: { id: order.gigId }, select: { title: true } });
+    await createNotification({
+      userId: order.sellerId,
+      title: "New Review Received! ⭐",
+      message: `${reviewer?.name || reviewer?.username || 'A student'} left a ${parseInt(rating)}-star review on '${gig?.title || 'your gig'}'.`,
+      type: "NEW_REVIEW",
+      relatedId: order.id,
     });
 
     return res.status(201).json({

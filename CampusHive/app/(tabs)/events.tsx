@@ -14,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { events } from '@/data/mockData';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import NotificationBell from '@/components/ui/NotificationBell';
 
 type EventFilter = 'all' | 'free' | 'paid' | 'trending' | 'registered';
 
@@ -326,7 +327,7 @@ export default function EventsScreen() {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Events" subtitle="Plan your campus week better" />
+      <ScreenHeader title="Events" subtitle="Plan your campus week better" action={<NotificationBell color={Colors.text} />} />
 
       <FlatList
         data={filteredEvents}

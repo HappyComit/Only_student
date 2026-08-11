@@ -72,21 +72,13 @@ app.use(cookieParser());
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // ==========================================
-// RATE LIMITING (Disabled for unlimited testing)
+// RATE LIMITING
 // ==========================================
 
-// Global API Rate Limiter — set high threshold for testing (10,000 requests)
+// Global API Rate Limiter — high threshold for general endpoints
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,   // 15 minutes
-  max: 10000,                  // Unlimited / 10,000 requests per 15 minutes
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Auth Limiter — set high threshold for testing (10,000 requests)
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,   // 15 minutes
-  max: 10000,                  // Unlimited / 10,000 requests per 15 minutes
+  max: 10000,                  // 10,000 requests per 15 minutes (general protection)
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -94,8 +86,10 @@ const authLimiter = rateLimit({
 // Apply global limiter to ALL /api endpoints
 app.use('/api', globalLimiter);
 
-// Apply strict limiter specifically to auth routes (runs BEFORE the auth router)
-app.use('/api/auth', authLimiter);
+// NOTE: Strict per-user rate limiting (10 req / 5 min per email) for
+// /auth/login and /auth/forgot-password is applied directly in routes/auth.js
+// using the authRateLimiter middleware. This avoids blocking multiple students
+// sharing campus Wi-Fi (same IP) from each other.
 
 // ==========================================
 // ROUTES

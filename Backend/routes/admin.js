@@ -82,6 +82,7 @@ router.get('/stats', adminAuth, async (req, res) => {
         name: true,
         username: true,
         email: true,
+        phone: true,
         isSeller: true,
         isVerified: true,
         university: true,

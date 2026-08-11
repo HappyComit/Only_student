@@ -45,13 +45,13 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Image successfully uploaded to Supabase '${bucket}' bucket.`,
+      message: 'Image uploaded successfully.',
       url: publicUrl,
     });
   } catch (err) {
     console.error('Error in POST /api/upload:', err.message);
     return res.status(500).json({
-      error: 'Failed to upload image to Supabase cloud storage.',
+      error: 'Failed to upload image.',
       details: err.message,
     });
   }

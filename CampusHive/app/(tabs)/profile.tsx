@@ -511,6 +511,33 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.sectionHeaderRowSpaced}>
+          <Text style={styles.sectionTitle}>Legal & Support</Text>
+        </View>
+
+        <View style={styles.settingsCard}>
+          <SettingsItem
+            icon="shield-account-outline"
+            title="Privacy Policy"
+            subtitle="How we collect and protect student data"
+            onPress={() => router.push('/legal/privacy')}
+          />
+          <View style={styles.divider} />
+          <SettingsItem
+            icon="file-document-outline"
+            title="Terms of Service"
+            subtitle="Rules, eligibility & marketplace guidelines"
+            onPress={() => router.push('/legal/terms')}
+          />
+          <View style={styles.divider} />
+          <SettingsItem
+            icon="cash-refund"
+            title="Refund Policy"
+            subtitle="Booking fee & order refund rules"
+            onPress={() => router.push('/legal/refund')}
+          />
+        </View>
+
+        <View style={styles.sectionHeaderRowSpaced}>
           <Text style={styles.sectionTitle}>Session</Text>
         </View>
 

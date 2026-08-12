@@ -596,8 +596,9 @@ export default function AuthScreen() {
 
             <Text style={styles.legalNotice}>
               By joining, you agree to our{' '}
-              <Text style={styles.legalHighlight}>Terms of Service</Text> and{' '}
-              <Text style={styles.legalHighlight}>Privacy Policy</Text>
+              <Text style={styles.legalHighlight} onPress={() => router.push('/legal/terms')}>Terms of Service</Text>,{' '}
+              <Text style={styles.legalHighlight} onPress={() => router.push('/legal/privacy')}>Privacy Policy</Text> &{' '}
+              <Text style={styles.legalHighlight} onPress={() => router.push('/legal/refund')}>Refund Policy</Text>
             </Text>
           </Animated.View>
 

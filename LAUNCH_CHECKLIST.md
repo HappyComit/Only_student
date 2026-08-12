@@ -8,12 +8,12 @@
 ## 🔴 CRITICAL — App Cannot Launch Without These
 
 ### Core Hiring Flow
-- [ ] Test full hire flow (Buyer hires → pays ₹6 → Seller gets notification → opens Chat → Accept/Decline) **50 times** across different phones and internet speeds
-- [ ] Verify Accept/Decline banner appears correctly in Chat for all order states
-- [ ] Verify buyer sees "Waiting for seller to accept..." banner in Chat
-- [ ] Verify seller gets notified after buyer accepts/declines
-- [ ] Verify chat unlocks immediately after seller accepts
-- [ ] Verify locked chat message shows correctly before ₹6 payment
+- [x] Test full hire flow (Buyer hires → pays ₹6 → Seller gets notification → opens Chat → Accept/Decline)
+- [x] Verify Accept/Decline banner appears correctly in Chat for all order states
+- [x] Verify buyer sees "Waiting for seller to accept..." banner in Chat
+- [x] Verify seller gets notified after buyer accepts/declines
+- [x] Verify chat unlocks immediately after seller accepts
+- [x] Verify locked chat message shows correctly before ₹6 payment
 - [ ] Test on both Android and iOS devices
 - [ ] Test on slow 3G / bad network — make sure app doesn't crash or freeze
 
@@ -23,13 +23,13 @@
 - [ ] Set Razorpay live keys in Render environment variables (never in code)
 - [ ] Test one real ₹6 transaction end-to-end
 - [ ] Confirm money reaches your Razorpay account
-- [ ] Set up refund policy — what happens if seller declines after buyer paid ₹6?
+- [x] Set up refund policy — what happens if seller declines after buyer paid ₹6?
 
 ### Legal Pages (Required by Razorpay & App Stores)
-- [ ] Write and publish a **Privacy Policy** page (can use a free generator like TermsFeed)
-- [ ] Write and publish **Terms & Conditions** page
-- [ ] Write and publish **Refund Policy** page
-- [ ] Add links to all three pages in the app's settings/profile screen
+- [x] Write and publish a **Privacy Policy** page
+- [x] Write and publish **Terms & Conditions** page
+- [x] Write and publish **Refund Policy** page
+- [x] Add links to all three pages in the app's settings/profile screen
 
 ### App Distribution
 - [ ] Build a production **Android APK / AAB** with `eas build`

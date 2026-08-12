@@ -123,25 +123,55 @@ export async function apiFetch<T = any>(
     ...options.headers,
   };
 
-  const config: RequestInit = {
-    ...options,
-    headers,
-  };
+  const { signal: callerSignal, ...restOptions } = options;
 
   let lastError: any = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      // 35-second timeout guard to accommodate Render free tier cold starts
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 35000);
+    // If caller explicitly cancelled this request, fail fast without retrying
+    if (callerSignal?.aborted) {
+      const err = new Error('Aborted');
+      err.name = 'AbortError';
+      throw err;
+    }
 
+    const controller = new AbortController();
+    // 50-second timeout guard to accommodate Render free tier cold starts
+    const timeoutId = setTimeout(() => {
+      try {
+        controller.abort();
+      } catch {}
+    }, 50000);
+
+    const onCallerAbort = () => {
+      try {
+        controller.abort();
+      } catch {}
+    };
+
+    if (callerSignal) {
+      if (typeof (callerSignal as any).addEventListener === 'function') {
+        (callerSignal as any).addEventListener('abort', onCallerAbort);
+      } else {
+        (callerSignal as any).onabort = onCallerAbort;
+      }
+    }
+
+    try {
       const response = await fetch(`${API_BASE_URL}${path}`, {
-        ...config,
+        ...restOptions,
+        headers,
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
+      if (callerSignal) {
+        if (typeof (callerSignal as any).removeEventListener === 'function') {
+          (callerSignal as any).removeEventListener('abort', onCallerAbort);
+        } else if ((callerSignal as any).onabort === onCallerAbort) {
+          (callerSignal as any).onabort = null;
+        }
+      }
 
       // Parse JSON or text response
       const contentType = response.headers.get('content-type');
@@ -156,7 +186,7 @@ export async function apiFetch<T = any>(
         const isServerError = response.status >= 500 && response.status < 600;
         // Retry on 5xx server glitches if retries remain
         if (isServerError && attempt < retries) {
-          console.warn(`⚠️ [API] Server ${response.status} error on ${path}. Retrying (${attempt + 1}/${retries})...`);
+          console.log(`ℹ️ [API] Server ${response.status} on ${path}. Retrying (${attempt + 1}/${retries})...`);
           await delay(1000 * Math.pow(2, attempt)); // 1s, 2s backoff
           continue;
         }
@@ -165,14 +195,29 @@ export async function apiFetch<T = any>(
 
       return data as T;
     } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (callerSignal) {
+        if (typeof (callerSignal as any).removeEventListener === 'function') {
+          (callerSignal as any).removeEventListener('abort', onCallerAbort);
+        } else if ((callerSignal as any).onabort === onCallerAbort) {
+          (callerSignal as any).onabort = null;
+        }
+      }
+
       lastError = error;
 
+      // If caller explicitly aborted (e.g. unmount/navigation), rethrow cleanly without retrying
+      if (callerSignal?.aborted) {
+        throw error;
+      }
+
       // Handle aborted/timed-out requests or network drops
-      const isNetworkError = error.name === 'AbortError' || error.message?.includes('Network') || error.message?.includes('Failed to fetch');
+      const isAbort = error.name === 'AbortError' || error.message?.includes('Aborted');
+      const isNetworkError = isAbort || error.message?.includes('Network') || error.message?.includes('Failed to fetch');
 
       if (isNetworkError && attempt < retries) {
-        console.warn(`⚠️ [API] Network error on ${path} (${error.message}). Retrying (${attempt + 1}/${retries})...`);
-        await delay(1000 * Math.pow(2, attempt)); // 1s, 2s backoff
+        console.log(`ℹ️ [API] Network retry on ${path} (${error.message || 'Aborted'}). Retrying (${attempt + 1}/${retries})...`);
+        await delay(1200 * Math.pow(2, attempt)); // 1.2s, 2.4s backoff
         continue;
       }
 

@@ -59,6 +59,7 @@ export default function ChatDetailsScreen() {
     avatarUrl: freelancerAvatar || '',
   });
   const [isLocked, setIsLocked] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [activeOrder, setActiveOrder] = useState<any | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -113,14 +114,17 @@ export default function ChatDetailsScreen() {
         return;
       }
 
-      const data = await apiFetch<{ chatPartner: any; isLocked?: boolean; activeOrder?: any; count: number; history: any[] }>(`/messages/${partnerId}`);
+      const data = await apiFetch<{ chatPartner: any; isLocked?: boolean; isReadOnly?: boolean; activeOrder?: any; count: number; history: any[] }>(`/messages/${partnerId}`);
       if (data) {
         if (data.chatPartner) {
           setChatPartner(data.chatPartner);
         }
         setIsLocked(Boolean(data.isLocked));
+        setIsReadOnly(Boolean(data.isReadOnly));
         if (data.activeOrder) {
           setActiveOrder(data.activeOrder);
+        } else {
+          setActiveOrder(null);
         }
         if (Array.isArray(data.history)) {
           setMessages((prev) => {
@@ -450,7 +454,38 @@ export default function ChatDetailsScreen() {
         </View>
       )}
 
-      {isLocked && !activeOrder?.status?.includes('PENDING') && (
+      {/* ── Read-Only Banner for DELIVERED/COMPLETED orders ── */}
+      {isReadOnly && activeOrder && (activeOrder.status === 'DELIVERED' || activeOrder.status === 'COMPLETED') && (
+        <View style={styles.readOnlyBanner}>
+          <View style={styles.readOnlyBannerContent}>
+            <MaterialCommunityIcons name={activeOrder.status === 'COMPLETED' ? 'check-decagram' : 'package-variant-closed'} size={22} color="#6366F1" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.readOnlyBannerTitle}>
+                {activeOrder.status === 'COMPLETED' ? '✅ Order Completed' : '📦 Work Delivered'}
+              </Text>
+              <Text style={styles.readOnlyBannerText}>
+                This chat is now read-only. To work together again, place a new hire request.
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.readOnlyHireButton}
+            activeOpacity={0.86}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/marketplace');
+              }
+            }}
+          >
+            <MaterialCommunityIcons name="briefcase-plus-outline" size={14} color="#fff" />
+            <Text style={styles.readOnlyHireButtonText}>Hire Again</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {isLocked && !isReadOnly && !activeOrder?.status?.includes('PENDING') && (
         <View style={styles.lockedBanner}>
           <View style={styles.lockedBannerContent}>
             <MaterialCommunityIcons name="lock-outline" size={22} color="#D97706" />
@@ -479,25 +514,30 @@ export default function ChatDetailsScreen() {
       )}
 
       <View style={[styles.composerWrap, { paddingBottom: Math.max(insets.bottom, Spacing.sm) }]}> 
-        <View style={[styles.composerRow, isLocked && { backgroundColor: '#F3F4F6' }]}>
+        <View style={[styles.composerRow, (isLocked || isReadOnly) && { backgroundColor: '#F3F4F6' }]}>
           <TextInput
             style={styles.composerInput}
-            placeholder={isLocked ? '🔒 Pay ₹6 booking fee to unlock chat...' : isFreelancerMode ? 'Reply to client...' : 'Write a message to freelancer...'}
+            placeholder={
+              isReadOnly ? '📋 Chat is read-only — order completed'
+              : isLocked ? '🔒 Pay ₹6 booking fee to unlock chat...'
+              : isFreelancerMode ? 'Reply to client...'
+              : 'Write a message to freelancer...'
+            }
             placeholderTextColor={Colors.textSecondary}
             value={draft}
             onChangeText={setDraft}
-            editable={!isLocked}
+            editable={!isLocked && !isReadOnly}
             multiline
             maxLength={500}
           />
 
           <TouchableOpacity
-            style={[styles.sendButton, (isLocked || draft.trim().length === 0) && styles.sendButtonDisabled]}
+            style={[styles.sendButton, (isLocked || isReadOnly || draft.trim().length === 0) && styles.sendButtonDisabled]}
             activeOpacity={0.86}
             onPress={handleSend}
-            disabled={isLocked || draft.trim().length === 0}
+            disabled={isLocked || isReadOnly || draft.trim().length === 0}
           >
-            <MaterialCommunityIcons name={isLocked ? "lock" : "send"} size={16} color={Colors.white} />
+            <MaterialCommunityIcons name={isLocked ? "lock" : isReadOnly ? "eye-outline" : "send"} size={16} color={Colors.white} />
           </TouchableOpacity>
         </View>
       </View>
@@ -847,5 +887,48 @@ const styles = StyleSheet.create({
     color: '#065F46',
     fontWeight: '800',
     flex: 1,
+  },
+  readOnlyBanner: {
+    backgroundColor: '#EEF2FF',
+    borderColor: '#A5B4FC',
+    borderWidth: 1,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: 12,
+    marginHorizontal: Spacing.base,
+    marginBottom: Spacing.xs,
+    borderRadius: BorderRadius.md,
+  },
+  readOnlyBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  readOnlyBannerTitle: {
+    ...Typography.body,
+    color: '#3730A3',
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  readOnlyBannerText: {
+    ...Typography.bodySmall,
+    color: '#4338CA',
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  readOnlyHireButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#6366F1',
+    borderRadius: BorderRadius.full,
+    paddingVertical: 9,
+    paddingHorizontal: Spacing.base,
+  },
+  readOnlyHireButtonText: {
+    ...Typography.bodySmall,
+    color: '#fff',
+    fontWeight: '800',
   },
 });

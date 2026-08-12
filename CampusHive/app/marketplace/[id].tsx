@@ -190,20 +190,23 @@ export default function FreelancerProfile() {
           {
             text: 'Open Chat',
             onPress: () => {
-              if (freelancer) {
-                router.push({
-                  pathname: '/chats/[id]',
-                  params: {
-                    id: `new-${freelancer.id}`,
-                    freelancerId: freelancer.id,
-                    freelancerName: freelancer.name,
-                    freelancerAvatar: freelancer.avatar,
-                    projectTitle: gig?.title,
-                  },
-                });
-              } else {
-                router.replace('/earnings');
-              }
+              setTimeout(() => {
+                const targetSellerId = gig?.seller?.id || gig?.sellerId;
+                if (targetSellerId) {
+                  router.push({
+                    pathname: '/chats/[id]',
+                    params: {
+                      id: targetSellerId,
+                      freelancerId: targetSellerId,
+                      freelancerName: gig?.seller?.name || gig?.seller?.username || 'Freelancer',
+                      freelancerAvatar: gig?.seller?.avatarUrl || '',
+                      projectTitle: gig?.title || '',
+                    },
+                  });
+                } else {
+                  router.push('/(tabs)/chats');
+                }
+              }, 150);
             },
           },
         ]
@@ -248,7 +251,7 @@ export default function FreelancerProfile() {
     router.push({
       pathname: '/chats/[id]',
       params: {
-        id: `new-${freelancer.id}`,
+        id: freelancer.id,
         freelancerId: freelancer.id,
         freelancerName: freelancer.name,
         freelancerAvatar: freelancer.avatar,

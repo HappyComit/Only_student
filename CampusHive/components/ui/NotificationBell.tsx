@@ -35,10 +35,9 @@ export default function NotificationBell({
     }
   }, []);
 
-  // Fetch immediately on mount & setup interval
+  // Setup interval background polling every 30s
   useEffect(() => {
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 15000);
+    const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
   }, [fetchUnreadCount]);
 

@@ -31,21 +31,45 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     // 3.5 Check if chat section is unlocked via an active order (₹6 booking fee paid)
-    const activeOrder = await prisma.order.findFirst({
+    // First prioritize PENDING_ACCEPTANCE orders (the newest hire request awaiting seller action)
+    let activeOrder = await prisma.order.findFirst({
       where: {
         OR: [
           { buyerId: senderId, sellerId: receiverId },
           { buyerId: receiverId, sellerId: senderId }
         ],
         bookingFeePaid: true,
-        status: { in: ['PENDING_ACCEPTANCE', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'] }
-      }
+        status: 'PENDING_ACCEPTANCE'
+      },
+      orderBy: { createdAt: 'desc' }
     });
+    // Fallback: if no pending order, find any active order (chat is still unlocked)
+    if (!activeOrder) {
+      activeOrder = await prisma.order.findFirst({
+        where: {
+          OR: [
+            { buyerId: senderId, sellerId: receiverId },
+            { buyerId: receiverId, sellerId: senderId }
+          ],
+          bookingFeePaid: true,
+          status: { in: ['IN_PROGRESS', 'DELIVERED', 'COMPLETED'] }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    }
 
     if (!activeOrder) {
       return res.status(403).json({
         error: "Chat Section Locked! 🔒 You must place a hire request (₹6 platform booking fee) to unlock chat with this user.",
         isLocked: true
+      });
+    }
+
+    // 3.6 Block sending messages if order is DELIVERED or COMPLETED (read-only mode)
+    if (activeOrder.status === 'DELIVERED' || activeOrder.status === 'COMPLETED') {
+      return res.status(403).json({
+        error: "This chat is now read-only. The order has been completed. To chat again, place a new hire request.",
+        isReadOnly: true
       });
     }
 
@@ -199,21 +223,29 @@ router.get('/:userId', authenticateToken, async (req, res) => {
       ]
     };
 
+    const orderWhere = {
+      OR: [
+        { buyerId: senderId, sellerId: receiverId },
+        { buyerId: receiverId, sellerId: senderId }
+      ],
+      bookingFeePaid: true,
+    };
+
     // Run all queries in parallel — cuts ~60% latency vs sequential
-    const [userExists, activeOrder, totalCount, chatHistory] = await Promise.all([
+    const [userExists, pendingOrder, fallbackOrder, totalCount, chatHistory] = await Promise.all([
       // 1. Check if chat partner exists
       prisma.user.findUnique({ where: { id: receiverId } }),
 
-      // 2. Check if chat is unlocked via an active order (₹6 booking fee paid)
+      // 2a. PRIORITY: Find PENDING_ACCEPTANCE order (new hire request awaiting seller action)
       prisma.order.findFirst({
-        where: {
-          OR: [
-            { buyerId: senderId, sellerId: receiverId },
-            { buyerId: receiverId, sellerId: senderId }
-          ],
-          bookingFeePaid: true,
-          status: { in: ['PENDING_ACCEPTANCE', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'] }
-        }
+        where: { ...orderWhere, status: 'PENDING_ACCEPTANCE' },
+        orderBy: { createdAt: 'desc' }
+      }),
+
+      // 2b. FALLBACK: Find any other active order (chat stays unlocked)
+      prisma.order.findFirst({
+        where: { ...orderWhere, status: { in: ['IN_PROGRESS', 'DELIVERED', 'COMPLETED'] } },
+        orderBy: { createdAt: 'desc' }
       }),
 
       // 3. Count total messages for pagination metadata
@@ -227,6 +259,10 @@ router.get('/:userId', authenticateToken, async (req, res) => {
         take: limit,
       })
     ]);
+
+    // Prioritize PENDING_ACCEPTANCE order so seller sees accept/reject buttons
+    const activeOrder = pendingOrder || fallbackOrder;
+
 
     if (!userExists) {
       return res.status(404).json({ error: "Chat partner profile not found." });
@@ -242,6 +278,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
         avatarUrl: userExists.avatarUrl
       },
       isLocked: !activeOrder,
+      isReadOnly: activeOrder ? (activeOrder.status === 'DELIVERED' || activeOrder.status === 'COMPLETED') : false,
       activeOrder: activeOrder ? {
         id: activeOrder.id,
         buyerId: activeOrder.buyerId,

@@ -332,354 +332,354 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-      <SafeAreaView style={styles.heroWrap}>
-        <View style={styles.heroOrbA} />
-        <View style={styles.heroOrbB} />
+        <SafeAreaView style={styles.heroWrap}>
+          <View style={styles.heroOrbA} />
+          <View style={styles.heroOrbB} />
 
-        <View style={styles.heroTopRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.heroEyebrow}>CampusHive Account</Text>
-            <Text style={styles.heroTitle} numberOfLines={1}>
-              {profile?.name ? `${profile.name}` : 'My Account'}
-            </Text>
-          </View>
-
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <NotificationBell />
-            <TouchableOpacity
-              style={styles.editPill}
-              activeOpacity={0.88}
-              onPress={openEditModal}
-            >
-              <MaterialCommunityIcons name="pencil-outline" size={14} color={Colors.white} />
-              <Text style={styles.editPillText}>Edit</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.profileCard}>
-          <View style={styles.profileTopRow}>
-            <TouchableOpacity
-              style={styles.avatarWrap}
-              activeOpacity={0.85}
-              onPress={handleChangePhoto}
-            >
-              <Avatar uri={avatarUri} size={82} />
-              <View style={styles.cameraBadge}>
-                <MaterialCommunityIcons name="camera-outline" size={14} color={Colors.white} />
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.profileTextWrap}>
-              <Text style={styles.profileName}>{profile?.name || profile?.email?.split('@')[0] || 'Student Member'}</Text>
-              <Text style={styles.profileRole}>{profile?.isSeller ? 'Freelancer (Seller)' : 'Client (Buyer)'}</Text>
-              <Text style={styles.profileMeta}>
-                {profile?.university || 'Chandigarh University'} • {profile?.year || '2nd Year'}
-                {profile?.department ? ` • ${profile.department}` : ''}
+          <View style={styles.heroTopRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.heroEyebrow}>CampusHive Account</Text>
+              <Text style={styles.heroTitle} numberOfLines={1}>
+                {profile?.name ? `${profile.name}` : 'My Account'}
               </Text>
-              {profile?.upiId ? (
-                <Text style={[styles.profileMeta, { color: Colors.primary, fontWeight: '700', marginTop: 2 }]}>
-                  UPI: {profile.upiId}
-                </Text>
-              ) : null}
-              {profile?.phone ? (
-                <Text style={[styles.profileMeta, { color: Colors.textSecondary, fontWeight: '600', marginTop: 2 }]}>
-                  📱 {profile.phone}
-                </Text>
-              ) : null}
-              <View style={styles.domainPill}>
-                <Text style={styles.domainPillText}>{profileInfo.emailDomain}</Text>
-              </View>
             </View>
-          </View>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{formatK(stats.completedOrders)}</Text>
-              <Text style={styles.statLabel}>Orders</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>Rs {formatK(stats.earnings)}</Text>
-              <Text style={styles.statLabel}>Earnings</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{profile?.isVerified ? '5.0' : '4.8'}</Text>
-              <Text style={styles.statLabel}>Rating</Text>
-            </View>
-          </View>
-
-          <View style={styles.followStrip}>
-            <View style={styles.followCol}>
-              <Text style={styles.followCount}>{stats.followers}</Text>
-              <Text style={styles.followLabel}>Followers</Text>
-            </View>
-            <View style={styles.followDivider} />
-            <View style={styles.followCol}>
-              <Text style={styles.followCount}>{stats.following}</Text>
-              <Text style={styles.followLabel}>Following</Text>
-            </View>
-            <View style={styles.followDivider} />
-            <View style={styles.followCol}>
-              <Text style={styles.followCount}>{profile?.createdAt ? new Date(profile.createdAt).getFullYear() : '2026'}</Text>
-              <Text style={styles.followLabel}>Joined</Text>
-            </View>
-          </View>
-
-          <View style={styles.ctaRow}>
-            <ModernButton
-              label="View Earnings"
-              variant="primary"
-              size="sm"
-              onPress={() => router.push('/earnings')}
-              fullWidth
-              style={styles.ctaButton}
-            />
-            <ModernButton
-              label="Notifications"
-              variant="outline"
-              size="sm"
-              onPress={() => router.push('/notifications')}
-              fullWidth
-              style={styles.ctaButton}
-            />
-          </View>
-        </View>
-      </SafeAreaView>
-
-      <View style={styles.contentWrap}>
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <Text style={styles.sectionSubTitle}>Run your account faster</Text>
-        </View>
-
-        <View style={styles.actionGrid}>
-          <ActionTile
-            icon="briefcase-plus-outline"
-            title="Post Service"
-            subtitle="Offer your skills"
-            color={Colors.primary}
-            onPress={() => router.push('/post-service')}
-          />
-          <ActionTile
-            icon="calendar-plus"
-            title="Create Event"
-            subtitle="Host on campus"
-            color="#0F766E"
-            onPress={() => router.push('/create-event')}
-          />
-          <ActionTile
-            icon="camera-retake"
-            title="Update Photo"
-            subtitle="Refresh identity"
-            color="#7C3AED"
-            onPress={handleChangePhoto}
-          />
-        </View>
-
-        <View style={styles.sectionHeaderRowSpaced}>
-          <Text style={styles.sectionTitle}>Preferences</Text>
-        </View>
-
-        <View style={styles.settingsCard}>
-          <SettingsItem
-            icon="briefcase-outline"
-            title="Freelancer Mode"
-            subtitle={isFreelancerMode ? 'Visible for student gigs' : 'Hidden from marketplace gigs'}
-            trailing={
-              <Switch
-                value={isFreelancerMode}
-                onValueChange={handleToggleFreelancer}
-                trackColor={{ false: '#D7DFED', true: '#C9DBFF' }}
-                thumbColor={isFreelancerMode ? Colors.primary : '#90A0BA'}
-              />
-            }
-          />
-          <View style={styles.divider} />
-          <SettingsItem
-            icon="account-edit-outline"
-            title="Edit profile"
-            subtitle="Name, bio, UPI ID, and role"
-            onPress={openEditModal}
-          />
-          <View style={styles.divider} />
-          <SettingsItem
-            icon="shield-check-outline"
-            title="Privacy and security"
-            subtitle="Password, sessions, and verification"
-            onPress={() => Alert.alert('Security', 'Security settings coming soon.')}
-          />
-        </View>
-
-        <View style={styles.sectionHeaderRowSpaced}>
-          <Text style={styles.sectionTitle}>Legal & Support</Text>
-        </View>
-
-        <View style={styles.settingsCard}>
-          <SettingsItem
-            icon="shield-account-outline"
-            title="Privacy Policy"
-            subtitle="How we collect and protect student data"
-            onPress={() => router.push('/legal/privacy')}
-          />
-          <View style={styles.divider} />
-          <SettingsItem
-            icon="file-document-outline"
-            title="Terms of Service"
-            subtitle="Rules, eligibility & marketplace guidelines"
-            onPress={() => router.push('/legal/terms')}
-          />
-          <View style={styles.divider} />
-          <SettingsItem
-            icon="cash-refund"
-            title="Refund Policy"
-            subtitle="Booking fee & order refund rules"
-            onPress={() => router.push('/legal/refund')}
-          />
-        </View>
-
-        <View style={styles.sectionHeaderRowSpaced}>
-          <Text style={styles.sectionTitle}>Session</Text>
-        </View>
-
-        <View style={styles.settingsCard}>
-          <SettingsItem
-            icon="logout"
-            title="Log out"
-            subtitle="You can log in again anytime"
-            danger
-            onPress={handleLogout}
-            trailing={null}
-          />
-        </View>
-
-        <Text style={styles.footerText}>
-          CampusHive v1.0.0 • {profileInfo.initials} profile experience
-        </Text>
-      </View>
-
-      {/* Edit Profile Modal */}
-      <Modal
-        visible={editModalVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setEditModalVisible(false)}
-      >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ width: '90%', backgroundColor: Colors.white, borderRadius: BorderRadius.xl, padding: Spacing.lg, maxHeight: '85%' }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md }}>
-              <Text style={{ ...Typography.h3, color: Colors.text }}>Edit Profile</Text>
-              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                <MaterialCommunityIcons name="close" size={24} color={Colors.textSecondary} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <NotificationBell />
+              <TouchableOpacity
+                style={styles.editPill}
+                activeOpacity={0.88}
+                onPress={openEditModal}
+              >
+                <MaterialCommunityIcons name="pencil-outline" size={14} color={Colors.white} />
+                <Text style={styles.editPillText}>Edit</Text>
               </TouchableOpacity>
             </View>
+          </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>Full Name</Text>
-              <TextInput
-                style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.md, color: Colors.text }}
-                value={editName}
-                onChangeText={setEditName}
-                placeholder="Full Name"
+          <View style={styles.profileCard}>
+            <View style={styles.profileTopRow}>
+              <TouchableOpacity
+                style={styles.avatarWrap}
+                activeOpacity={0.85}
+                onPress={handleChangePhoto}
+              >
+                <Avatar uri={avatarUri} size={82} />
+                <View style={styles.cameraBadge}>
+                  <MaterialCommunityIcons name="camera-outline" size={14} color={Colors.white} />
+                </View>
+              </TouchableOpacity>
+
+              <View style={styles.profileTextWrap}>
+                <Text style={styles.profileName}>{profile?.name || profile?.email?.split('@')[0] || 'Student Member'}</Text>
+                <Text style={styles.profileRole}>{profile?.isSeller ? 'Freelancer (Seller)' : 'Client (Buyer)'}</Text>
+                <Text style={styles.profileMeta}>
+                  {profile?.university || 'Chandigarh University'} • {profile?.year || '2nd Year'}
+                  {profile?.department ? ` • ${profile.department}` : ''}
+                </Text>
+                {profile?.upiId ? (
+                  <Text style={[styles.profileMeta, { color: Colors.primary, fontWeight: '700', marginTop: 2 }]}>
+                    UPI: {profile.upiId}
+                  </Text>
+                ) : null}
+                {profile?.phone ? (
+                  <Text style={[styles.profileMeta, { color: Colors.textSecondary, fontWeight: '600', marginTop: 2 }]}>
+                    📱 {profile.phone}
+                  </Text>
+                ) : null}
+                <View style={styles.domainPill}>
+                  <Text style={styles.domainPillText}>{profileInfo.emailDomain}</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.statsRow}>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{formatK(stats.completedOrders)}</Text>
+                <Text style={styles.statLabel}>Orders</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>Rs {formatK(stats.earnings)}</Text>
+                <Text style={styles.statLabel}>Earnings</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{profile?.isVerified ? '5.0' : '4.8'}</Text>
+                <Text style={styles.statLabel}>Rating</Text>
+              </View>
+            </View>
+
+            <View style={styles.followStrip}>
+              <View style={styles.followCol}>
+                <Text style={styles.followCount}>{stats.followers}</Text>
+                <Text style={styles.followLabel}>Followers</Text>
+              </View>
+              <View style={styles.followDivider} />
+              <View style={styles.followCol}>
+                <Text style={styles.followCount}>{stats.following}</Text>
+                <Text style={styles.followLabel}>Following</Text>
+              </View>
+              <View style={styles.followDivider} />
+              <View style={styles.followCol}>
+                <Text style={styles.followCount}>{profile?.createdAt ? new Date(profile.createdAt).getFullYear() : '2026'}</Text>
+                <Text style={styles.followLabel}>Joined</Text>
+              </View>
+            </View>
+
+            <View style={styles.ctaRow}>
+              <ModernButton
+                label="View Earnings"
+                variant="primary"
+                size="sm"
+                onPress={() => router.push('/earnings')}
+                fullWidth
+                style={styles.ctaButton}
               />
+              <ModernButton
+                label="Notifications"
+                variant="outline"
+                size="sm"
+                onPress={() => router.push('/notifications')}
+                fullWidth
+                style={styles.ctaButton}
+              />
+            </View>
+          </View>
+        </SafeAreaView>
 
-              <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 6 }}>Academic Year</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: Spacing.md }}>
-                {['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'].map((yr) => {
-                  const isSelected = editYear === yr;
-                  return (
-                    <TouchableOpacity
-                      key={yr}
-                      onPress={() => setEditYear(yr)}
-                      activeOpacity={0.8}
-                      style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 7,
-                        borderRadius: BorderRadius.full,
-                        borderWidth: 1,
-                        borderColor: isSelected ? Colors.primary : Colors.border,
-                        backgroundColor: isSelected ? Colors.primaryLight : Colors.surface,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          ...Typography.caption,
-                          color: isSelected ? Colors.primaryDark : Colors.textSecondary,
-                          fontWeight: isSelected ? '700' : '500',
-                        }}
-                      >
-                        {yr}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+        <View style={styles.contentWrap}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <Text style={styles.sectionSubTitle}>Run your account faster</Text>
+          </View>
+
+          <View style={styles.actionGrid}>
+            <ActionTile
+              icon="briefcase-plus-outline"
+              title="Post Service"
+              subtitle="Offer your skills"
+              color={Colors.primary}
+              onPress={() => router.push('/post-service')}
+            />
+            <ActionTile
+              icon="calendar-plus"
+              title="Create Event"
+              subtitle="Host on campus"
+              color="#0F766E"
+              onPress={() => router.push('/create-event')}
+            />
+            <ActionTile
+              icon="camera-retake"
+              title="Update Photo"
+              subtitle="Refresh identity"
+              color="#7C3AED"
+              onPress={handleChangePhoto}
+            />
+          </View>
+
+          <View style={styles.sectionHeaderRowSpaced}>
+            <Text style={styles.sectionTitle}>Preferences</Text>
+          </View>
+
+          <View style={styles.settingsCard}>
+            <SettingsItem
+              icon="briefcase-outline"
+              title="Freelancer Mode"
+              subtitle={isFreelancerMode ? 'Visible for student gigs' : 'Hidden from marketplace gigs'}
+              trailing={
+                <Switch
+                  value={isFreelancerMode}
+                  onValueChange={handleToggleFreelancer}
+                  trackColor={{ false: '#D7DFED', true: '#C9DBFF' }}
+                  thumbColor={isFreelancerMode ? Colors.primary : '#90A0BA'}
+                />
+              }
+            />
+            <View style={styles.divider} />
+            <SettingsItem
+              icon="account-edit-outline"
+              title="Edit profile"
+              subtitle="Name, bio, UPI ID, and role"
+              onPress={openEditModal}
+            />
+            <View style={styles.divider} />
+            <SettingsItem
+              icon="shield-check-outline"
+              title="Privacy and security"
+              subtitle="Password, sessions, and verification"
+              onPress={() => Alert.alert('Security', 'Security settings coming soon.')}
+            />
+          </View>
+
+          <View style={styles.sectionHeaderRowSpaced}>
+            <Text style={styles.sectionTitle}>Legal & Support</Text>
+          </View>
+
+          <View style={styles.settingsCard}>
+            <SettingsItem
+              icon="shield-account-outline"
+              title="Privacy Policy"
+              subtitle="How we collect and protect student data"
+              onPress={() => router.push('/legal/privacy')}
+            />
+            <View style={styles.divider} />
+            <SettingsItem
+              icon="file-document-outline"
+              title="Terms of Service"
+              subtitle="Rules, eligibility & marketplace guidelines"
+              onPress={() => router.push('/legal/terms')}
+            />
+            <View style={styles.divider} />
+            <SettingsItem
+              icon="cash-refund"
+              title="Refund Policy"
+              subtitle="Booking fee & order refund rules"
+              onPress={() => router.push('/legal/refund')}
+            />
+          </View>
+
+          <View style={styles.sectionHeaderRowSpaced}>
+            <Text style={styles.sectionTitle}>Session</Text>
+          </View>
+
+          <View style={styles.settingsCard}>
+            <SettingsItem
+              icon="logout"
+              title="Log out"
+              subtitle="You can log in again anytime"
+              danger
+              onPress={handleLogout}
+              trailing={null}
+            />
+          </View>
+
+          <Text style={styles.footerText}>
+            CampusHive v1.0.0 • {profileInfo.initials} profile experience
+          </Text>
+        </View>
+
+        {/* Edit Profile Modal */}
+        <Modal
+          visible={editModalVisible}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setEditModalVisible(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{ width: '90%', backgroundColor: Colors.white, borderRadius: BorderRadius.xl, padding: Spacing.lg, maxHeight: '85%' }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md }}>
+                <Text style={{ ...Typography.h3, color: Colors.text }}>Edit Profile</Text>
+                <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                  <MaterialCommunityIcons name="close" size={24} color={Colors.textSecondary} />
+                </TouchableOpacity>
               </View>
 
-              <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>University / College</Text>
-              <TextInput
-                style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.md, color: Colors.text }}
-                value={editUniversity}
-                onChangeText={setEditUniversity}
-                placeholder="e.g. Chandigarh University"
-              />
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>Full Name</Text>
+                <TextInput
+                  style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.md, color: Colors.text }}
+                  value={editName}
+                  onChangeText={setEditName}
+                  placeholder="Full Name"
+                />
 
-              <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>Department / Course</Text>
-              <TextInput
-                style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.md, color: Colors.text }}
-                value={editDepartment}
-                onChangeText={setEditDepartment}
-                placeholder="e.g. Computer Science & Engineering (CSE)"
-              />
+                <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 6 }}>Academic Year</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: Spacing.md }}>
+                  {['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'].map((yr) => {
+                    const isSelected = editYear === yr;
+                    return (
+                      <TouchableOpacity
+                        key={yr}
+                        onPress={() => setEditYear(yr)}
+                        activeOpacity={0.8}
+                        style={{
+                          paddingHorizontal: 12,
+                          paddingVertical: 7,
+                          borderRadius: BorderRadius.full,
+                          borderWidth: 1,
+                          borderColor: isSelected ? Colors.primary : Colors.border,
+                          backgroundColor: isSelected ? Colors.primaryLight : Colors.surface,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            ...Typography.caption,
+                            color: isSelected ? Colors.primaryDark : Colors.textSecondary,
+                            fontWeight: isSelected ? '700' : '500',
+                          }}
+                        >
+                          {yr}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
 
-              <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>UPI ID (for receiving GPay payments)</Text>
-              <TextInput
-                style={{ borderWidth: 1, borderColor: Colors.primary, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.md, color: Colors.text, backgroundColor: Colors.surface }}
-                value={editUpiId}
-                onChangeText={setEditUpiId}
-                placeholder="e.g. yourname@okaxis or 9876543210@paytm"
-                autoCapitalize="none"
-              />
+                <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>University / College</Text>
+                <TextInput
+                  style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.md, color: Colors.text }}
+                  value={editUniversity}
+                  onChangeText={setEditUniversity}
+                  placeholder="e.g. Chandigarh University"
+                />
 
-              <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>Phone Number</Text>
-              <TextInput
-                style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.md, color: Colors.text }}
-                value={editPhone}
-                onChangeText={setEditPhone}
-                placeholder="e.g. 9876543210"
-                keyboardType="phone-pad"
-                maxLength={15}
-              />
+                <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>Department / Course</Text>
+                <TextInput
+                  style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.md, color: Colors.text }}
+                  value={editDepartment}
+                  onChangeText={setEditDepartment}
+                  placeholder="e.g. Computer Science & Engineering (CSE)"
+                />
 
-              <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>Bio / Tagline</Text>
-              <TextInput
-                style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.md, color: Colors.text, minHeight: 60 }}
-                value={editBio}
-                onChangeText={setEditBio}
-                placeholder="Tell students about yourself..."
-                multiline
-              />
+                <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>UPI ID (for receiving GPay payments)</Text>
+                <TextInput
+                  style={{ borderWidth: 1, borderColor: Colors.primary, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.md, color: Colors.text, backgroundColor: Colors.surface }}
+                  value={editUpiId}
+                  onChangeText={setEditUpiId}
+                  placeholder="e.g. yourname@okaxis or 9876543210@paytm"
+                  autoCapitalize="none"
+                />
 
-              <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>Skills (comma separated)</Text>
-              <TextInput
-                style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.lg, color: Colors.text }}
-                value={editSkills}
-                onChangeText={setEditSkills}
-                placeholder="e.g. React Native, Figma, Python"
-              />
+                <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>Phone Number</Text>
+                <TextInput
+                  style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.md, color: Colors.text }}
+                  value={editPhone}
+                  onChangeText={setEditPhone}
+                  placeholder="e.g. 9876543210"
+                  keyboardType="phone-pad"
+                  maxLength={15}
+                />
 
-              <ModernButton
-                label={savingProfile ? 'Saving...' : 'Save Profile'}
-                variant="primary"
-                size="md"
-                onPress={handleSaveProfile}
-                loading={savingProfile}
-                disabled={savingProfile}
-                fullWidth
-              />
-            </ScrollView>
+                <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>Bio / Tagline</Text>
+                <TextInput
+                  style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.md, color: Colors.text, minHeight: 60 }}
+                  value={editBio}
+                  onChangeText={setEditBio}
+                  placeholder="Tell students about yourself..."
+                  multiline
+                />
+
+                <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginBottom: 4 }}>Skills (comma separated)</Text>
+                <TextInput
+                  style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.lg, color: Colors.text }}
+                  value={editSkills}
+                  onChangeText={setEditSkills}
+                  placeholder="e.g. React Native, Figma, Python"
+                />
+
+                <ModernButton
+                  label={savingProfile ? 'Saving...' : 'Save Profile'}
+                  variant="primary"
+                  size="md"
+                  onPress={handleSaveProfile}
+                  loading={savingProfile}
+                  disabled={savingProfile}
+                  fullWidth
+                />
+              </ScrollView>
+            </View>
           </View>
-        </View>
-      </Modal>
-    </ScrollView>
+        </Modal>
+      </ScrollView>
     </View>
   );
 }

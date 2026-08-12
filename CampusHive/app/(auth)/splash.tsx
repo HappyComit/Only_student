@@ -49,12 +49,9 @@ export default function SplashScreen() {
           return;
         }
 
-        const completedOnboarding = await getOnboardingCompleted();
-        if (completedOnboarding) {
-          router.replace('/(auth)/auth');
-        } else {
-          router.replace('/(auth)/onboarding');
-        }
+        // DEV BYPASS: Always show onboarding cards during development
+        // TODO BEFORE LAUNCH: Restore getOnboardingCompleted() check so returning users skip onboarding
+        router.replace('/(auth)/onboarding');
       } catch (error) {
         console.error('Error determining initial route:', error);
         router.replace('/(auth)/onboarding');

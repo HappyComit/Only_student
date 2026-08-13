@@ -49,15 +49,11 @@ export default function SplashScreen() {
           return;
         }
 
-        const hasOnboarded = await getOnboardingCompleted();
-        if (hasOnboarded) {
-          router.replace('/(auth)/auth');
-        } else {
-          router.replace('/(auth)/onboarding');
-        }
+        // Non-logged-in users view the onboarding cards
+        router.replace('/(auth)/onboarding');
       } catch (error) {
         console.error('Error determining initial route:', error);
-        router.replace('/(auth)/auth');
+        router.replace('/(auth)/onboarding');
       }
     };
 

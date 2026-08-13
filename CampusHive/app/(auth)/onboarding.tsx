@@ -17,7 +17,7 @@ import { Colors, BorderRadius, Spacing, Typography } from '@/constants/theme';
 import { setOnboardingCompleted } from '@/constants/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const STORY_DURATION = 5500;
+const STORY_DURATION = 11000;
 
 const STORY_SLIDES = [
   {

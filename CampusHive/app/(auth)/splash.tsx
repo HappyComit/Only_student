@@ -75,7 +75,7 @@ export default function SplashScreen() {
         <View style={styles.logoBox}>
           <MaterialCommunityIcons name="book-open-page-variant" size={48} color="#FFFFFF" />
         </View>
-        <Text style={styles.appName}>onlyStudent</Text>
+        <Text style={styles.appName}>OnlyStudents</Text>
       </Animated.View>
 
       <Animated.View style={[styles.taglineContainer, { opacity: taglineOpacity, transform: [{ translateY: bottomSlide }] }]}>

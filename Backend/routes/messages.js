@@ -74,13 +74,14 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     // 4. Save the message to the database
-    // Sender's own message is auto-marked as read (they don't need to "read" their own message)
+    // isRead = false because the RECEIVER hasn't seen this message yet.
+    // The sender's own messages are identified in the UI via senderId, not isRead.
     const newMessage = await prisma.message.create({
       data: {
         senderId,
         receiverId,
         content: sanitize(content.trim(), 1000),
-        isRead: true
+        isRead: false
       }
     });
 

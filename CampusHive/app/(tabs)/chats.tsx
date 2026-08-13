@@ -113,7 +113,7 @@ export default function ChatsTabScreen() {
           },
           projectTitle: counterpart.isSeller ? 'Freelance Service' : 'Project Hire',
           status: 'in-progress', // Default status for UI badge
-          unreadCount: 0,
+          unreadCount: thread.unreadCount || 0,
         };
       }),
     [threads],

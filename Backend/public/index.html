@@ -17,6 +17,7 @@
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --border: #334155;
+      --success: #10b981;
     }
     * {
       box-sizing: border-box;
@@ -31,7 +32,7 @@
     }
     header {
       border-bottom: 1px solid var(--border);
-      background: rgba(15, 23, 42, 0.8);
+      background: rgba(15, 23, 42, 0.85);
       backdrop-filter: blur(12px);
       position: sticky;
       top: 0;
@@ -55,7 +56,7 @@
     }
     .nav-links {
       display: flex;
-      gap: 2rem;
+      gap: 1.5rem;
       align-items: center;
     }
     .nav-links a {
@@ -76,12 +77,23 @@
       text-decoration: none;
       font-weight: 600;
       font-size: 0.9rem;
+      border: none;
+      cursor: pointer;
       box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+      transition: transform 0.15s ease;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      box-shadow: none;
     }
     .hero {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 6rem 2rem 4rem;
+      padding: 5rem 2rem 3rem;
       text-align: center;
     }
     .badge {
@@ -96,10 +108,10 @@
       margin-bottom: 1.5rem;
     }
     h1 {
-      font-size: 3.5rem;
+      font-size: 3.2rem;
       font-weight: 800;
       letter-spacing: -0.02em;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
       line-height: 1.15;
     }
     h1 span {
@@ -108,10 +120,77 @@
       -webkit-text-fill-color: transparent;
     }
     .hero p {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       color: var(--text-muted);
       max-width: 700px;
-      margin: 0 auto 2.5rem;
+      margin: 0 auto 2rem;
+    }
+    .login-container {
+      max-width: 440px;
+      margin: 0 auto 4rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 2.5rem;
+      text-align: left;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    .login-container h3 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #f8fafc;
+    }
+    .login-container p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 0.6rem;
+      color: white;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .form-group input:focus {
+      border-color: var(--primary);
+    }
+    .login-btn {
+      width: 100%;
+      padding: 0.85rem;
+      font-size: 1rem;
+      margin-top: 0.5rem;
+    }
+    .alert-box {
+      padding: 0.8rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.88rem;
+      margin-top: 1rem;
+      display: none;
+    }
+    .alert-success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+    .alert-error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
     }
     .features {
       max-width: 1200px;
@@ -200,10 +279,12 @@
       <a href="#" class="logo">CampusHive</a>
       <div class="nav-links">
         <a href="#about">About</a>
+        <a href="#login-portal">Student Portal</a>
         <a href="#privacy">Privacy Policy</a>
         <a href="#terms">Terms</a>
         <a href="#refund">Refund Policy</a>
-        <a href="#contact" class="btn">Contact Us</a>
+        <a href="/admin" class="btn btn-secondary">Admin Portal</a>
+        <a href="#login-portal" class="btn">Student Login</a>
       </div>
     </div>
   </header>
@@ -212,6 +293,28 @@
     <div class="badge">🎓 Exclusive Campus Freelance Platform</div>
     <h1>Empowering Students to <span>Work, Hire & Earn</span> On Campus</h1>
     <p>CampusHive connects verified university students for peer-to-peer micro-gigs, academic help, technical freelancing, and campus errands with instant secure payments.</p>
+  </section>
+
+  <!-- Interactive Student Login Form for Razorpay Verification & User Access -->
+  <section id="login-portal">
+    <div class="login-container">
+      <h3>🔑 Student & Tester Portal</h3>
+      <p>Log in to access your CampusHive profile, active gigs, and verify checkout flows.</p>
+      
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Student Email / Username</label>
+          <input type="email" id="email" placeholder="student@university.edu" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn login-btn" id="submitBtn">Sign In to CampusHive</button>
+      </form>
+
+      <div id="alertBox" class="alert-box"></div>
+    </div>
   </section>
 
   <section class="features">
@@ -282,6 +385,49 @@
   <footer>
     <p>&copy; 2026 CampusHive. All rights reserved. Powered by Razorpay Secure Payments.</p>
   </footer>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const alertBox = document.getElementById('alertBox');
+    const submitBtn = document.getElementById('submitBtn');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Verifying Credentials...";
+      alertBox.style.display = "none";
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.user) {
+          alertBox.className = "alert-box alert-success";
+          alertBox.innerHTML = `<strong>✅ Authentication Successful!</strong><br>Welcome back, ${data.user.name || data.user.email}! (Role: ${data.user.role || 'Student'})`;
+          alertBox.style.display = "block";
+        } else {
+          alertBox.className = "alert-box alert-error";
+          alertBox.innerHTML = `<strong>❌ Login Failed:</strong> ${data.error || 'Invalid credentials'}`;
+          alertBox.style.display = "block";
+        }
+      } catch (err) {
+        alertBox.className = "alert-box alert-error";
+        alertBox.innerHTML = `<strong>⚠️ Server Error:</strong> ${err.message}`;
+        alertBox.style.display = "block";
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Sign In to CampusHive";
+      }
+    });
+  </script>
 
 </body>
 </html>

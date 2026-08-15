@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusHive - Student Freelance & Micro-Gigs Marketplace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary: #ec4899;
+      --dark: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--dark);
+      color: var(--text-main);
+      line-height: 1.6;
+    }
+    header {
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.25rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover {
+      color: var(--text-main);
+    }
+    .btn {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 0.6rem 1.4rem;
+      border-radius: 9999px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+    .hero {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 6rem 2rem 4rem;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.4rem 1rem;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #818cf8;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+    h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+      line-height: 1.15;
+    }
+    h1 span {
+      background: linear-gradient(135deg, #a5b4fc, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 700px;
+      margin: 0 auto 2.5rem;
+    }
+    .features {
+      max-width: 1200px;
+      margin: 2rem auto 6rem;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 2rem;
+    }
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(99, 102, 241, 0.1);
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .legal-section {
+      max-width: 1000px;
+      margin: 0 auto 6rem;
+      padding: 0 2rem;
+    }
+    .legal-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+    }
+    .legal-box h2 {
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+      color: #a5b4fc;
+    }
+    .legal-box h3 {
+      font-size: 1.15rem;
+      margin: 1.5rem 0 0.5rem;
+      color: #f8fafc;
+    }
+    .legal-box p, .legal-box ul {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+    .legal-box ul {
+      padding-left: 1.5rem;
+    }
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 3rem 2rem;
+      background: #090d16;
+      text-align: center;
+    }
+    footer p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    footer a {
+      color: #a5b4fc;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <a href="#" class="logo">CampusHive</a>
+      <div class="nav-links">
+        <a href="#about">About</a>
+        <a href="#privacy">Privacy Policy</a>
+        <a href="#terms">Terms</a>
+        <a href="#refund">Refund Policy</a>
+        <a href="#contact" class="btn">Contact Us</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero" id="about">
+    <div class="badge">🎓 Exclusive Campus Freelance Platform</div>
+    <h1>Empowering Students to <span>Work, Hire & Earn</span> On Campus</h1>
+    <p>CampusHive connects verified university students for peer-to-peer micro-gigs, academic help, technical freelancing, and campus errands with instant secure payments.</p>
+  </section>
+
+  <section class="features">
+    <div class="card">
+      <div class="card-icon">⚡</div>
+      <h3>Peer-to-Peer Micro Gigs</h3>
+      <p>Need assignment help, video editing, design, or quick errand runners? Hire trusted students from your campus in minutes.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔒</div>
+      <h3>Secure Razorpay Payments</h3>
+      <p>All booking fees and gig payments are protected using Razorpay PCI-DSS compliant payment gateways with instant UPI, Cards, and Netbanking support.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🛡️</div>
+      <h3>Verified Student Community</h3>
+      <p>Safe ecosystem exclusive to verified university students with real-time tracking, chat, and rating systems.</p>
+    </div>
+  </section>
+
+  <section class="legal-section">
+    
+    <!-- Privacy Policy -->
+    <div class="legal-box" id="privacy">
+      <h2>Privacy Policy</h2>
+      <p><strong>Last Updated: August 2026</strong></p>
+      <p>At CampusHive ("we", "our", "us"), we prioritize your privacy. This policy outlines how we collect, use, and protect your information when using the CampusHive mobile app and platform.</p>
+      <h3>1. Information We Collect</h3>
+      <ul>
+        <li><strong>Account Info:</strong> Name, student email address, campus affiliation, and profile data.</li>
+        <li><strong>Transactions & Payment Metadata:</strong> Transaction IDs, booking fee status, and order completion records processed securely via third-party gateway Razorpay. We do not store raw card numbers or UPI PINs.</li>
+      </ul>
+      <h3>2. How We Use Information</h3>
+      <p>To facilitate student gig connections, verify campus identities, process payments, and ensure compliance with RBI and Razorpay regulatory requirements.</p>
+    </div>
+
+    <!-- Terms and Conditions -->
+    <div class="legal-box" id="terms">
+      <h2>Terms and Conditions</h2>
+      <p><strong>Last Updated: August 2026</strong></p>
+      <p>Welcome to CampusHive. By accessing our application or services, you agree to comply with and be bound by the following terms.</p>
+      <h3>1. User Eligibility</h3>
+      <p>CampusHive is intended exclusively for verified university students and eligible campus freelancers.</p>
+      <h3>2. Payments & Booking Fees</h3>
+      <p>Payments for platform booking fees (₹6 - ₹9) and gig milestones are securely processed via Razorpay. Users agree to fulfill gig commitments professionally.</p>
+    </div>
+
+    <!-- Refund & Cancellation Policy -->
+    <div class="legal-box" id="refund">
+      <h2>Cancellation & Refund Policy</h2>
+      <p><strong>Last Updated: August 2026</strong></p>
+      <h3>1. Order Cancellation</h3>
+      <p>A buyer may cancel a hire request before the seller accepts the job. Once accepted and in-progress, cancellation requires mutual agreement.</p>
+      <h3>2. Platform Fee Refunds</h3>
+      <p>If a seller declines an order or fails to deliver within the agreed timeframe, the booking fee is credited back to your account or refunded to the original payment method via Razorpay within 5-7 business days.</p>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="legal-box" id="contact">
+      <h2>Contact Us</h2>
+      <p>For support, billing inquiries, or compliance questions, please contact our team:</p>
+      <p><strong>Email:</strong> <a href="mailto:onlystudentshelps@gmail.com">onlystudentshelps@gmail.com</a></p>
+      <p><strong>Platform:</strong> CampusHive Marketplace</p>
+    </div>
+
+  </section>
+
+  <footer>
+    <p>&copy; 2026 CampusHive. All rights reserved. Powered by Razorpay Secure Payments.</p>
+  </footer>
+
+</body>
+</html>

@@ -105,13 +105,9 @@ app.get(['/health', '/api/health'], (req, res) => {
   });
 });
 
-// Welcome/Health-Check route
+// Welcome/Landing Page route (Serves CampusHive public site for Razorpay verification)
 app.get('/', (req, res) => {
-  res.json({ 
-    message: "Welcome to the CampusHive API!",
-    status: "Healthy",
-    time: new Date()
-  });
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Mount our structured API endpoints under '/api' prefix

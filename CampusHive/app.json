@@ -1,20 +1,27 @@
 {
   "expo": {
     "name": "OnlyStudents",
-    "slug": "onlystudents",
+    "slug": "onlystudent",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "onlystudents",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "backgroundColor": "#4F46E5"
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#0F172A"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.onlystudents.app"
     },
     "android": {
-      "package": "com.onlystudents.app"
+      "package": "com.onlystudents.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4F46E5"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -22,10 +29,18 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      "expo-splash-screen"
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "90d5ea49-08d7-46fa-87ee-f5700d8842e9"
+      }
+    },
+    "owner": "happy14s-team"
   }
 }

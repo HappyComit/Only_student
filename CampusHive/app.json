@@ -41,6 +41,12 @@
         "projectId": "90d5ea49-08d7-46fa-87ee-f5700d8842e9"
       }
     },
-    "owner": "happy14s-team"
+    "owner": "happy14s-team",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/90d5ea49-08d7-46fa-87ee-f5700d8842e9"
+    }
   }
 }

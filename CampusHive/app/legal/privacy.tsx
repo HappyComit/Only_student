@@ -31,23 +31,23 @@ export default function PrivacyPolicyScreen() {
           <View style={styles.iconWrap}>
             <MaterialCommunityIcons name="shield-lock-outline" size={32} color={Colors.primary} />
           </View>
-          <Text style={styles.heroTitle}>CampusHive Privacy Policy</Text>
+          <Text style={styles.heroTitle}>OnlyStudents Privacy Policy</Text>
           <Text style={styles.heroSubtitle}>
-            Last updated: August 12, 2026 • Effective for all CampusHive student users
+            Last updated: August 12, 2026 • Effective for all OnlyStudents student users
           </Text>
         </View>
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionHeader}>1. Introduction</Text>
           <Text style={styles.bodyText}>
-            CampusHive ("we", "our", or "us") operates a peer-to-peer student marketplace platform connecting university students for freelance services, campus events, and academic collaboration. We respect your privacy and are committed to protecting your personal data in accordance with applicable data protection laws.
+            OnlyStudents ("we", "our", or "us") operates a peer-to-peer student marketplace platform connecting university students for freelance services, campus events, and academic collaboration. We respect your privacy and are committed to protecting your personal data in accordance with applicable data protection laws.
           </Text>
         </View>
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionHeader}>2. Information We Collect</Text>
           <Text style={styles.bodyText}>
-            We collect information that you directly provide to us when using CampusHive:
+            We collect information that you directly provide to us when using OnlyStudents:
           </Text>
           <View style={styles.bulletItem}>
             <Text style={styles.bulletDot}>•</Text>

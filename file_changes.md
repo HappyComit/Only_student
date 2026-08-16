@@ -29,6 +29,11 @@
 3. **[x] User-Facing Alert Cleanups**:
    - Removed all developer/internal infrastructure wording ("with Supabase Cloud Storage photo") from post-service and profile photo upload alerts.
 
+4. **[x] Unread Chat Badges (Per-Chat + Bottom Nav)**:
+   - Fixed `Backend/routes/messages.js`: changed `isRead: true` → `isRead: false` on message creation so new messages are correctly counted as unread.
+   - Fixed `CampusHive/app/(tabs)/chats.tsx`: changed `unreadCount: 0` → `unreadCount: thread.unreadCount || 0` to use real API data.
+   - Per-chat green badge, bottom nav tab badge, hero stats, and "Unread" filter all now work with real-time Socket.IO updates.
+
 ---
 
 ### ↺ How to Undo Changes (Instant Revert)

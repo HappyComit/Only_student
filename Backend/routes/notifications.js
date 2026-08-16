@@ -3,12 +3,14 @@ const router = express.Router();
 const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
 
+const { getIO } = require('../socket');
+
 /**
  * Helper function to create a notification in the DB
  */
 async function createNotification({ userId, title, message, type = 'GENERAL', relatedId = null }) {
   try {
-    return await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         userId,
         title,
@@ -17,6 +19,17 @@ async function createNotification({ userId, title, message, type = 'GENERAL', re
         relatedId,
       },
     });
+
+    try {
+      const io = getIO();
+      if (io) {
+        io.to(`user:${userId}`).emit('new_notification', notification);
+      }
+    } catch (e) {
+      console.error('Failed to emit real-time notification socket event:', e);
+    }
+
+    return notification;
   } catch (err) {
     console.error('Failed to create notification:', err);
     return null;

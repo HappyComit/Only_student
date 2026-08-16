@@ -37,7 +37,7 @@ export default function RazorpayCheckout({
   razorpayOrderId,
   amount,
   currency = 'INR',
-  name = 'CampusHive',
+  name = 'OnlyStudents',
   description = '₹6 Platform Booking Fee',
   prefillEmail = '',
   prefillName = '',

@@ -583,7 +583,7 @@ export default function FreelancerProfile() {
             razorpayKeyId={razorpayData.keyId}
             razorpayOrderId={razorpayData.razorpayOrderId}
             amount={razorpayData.amount}
-            name="CampusHive"
+            name="OnlyStudents"
             description={`₹6 Booking Fee for ${gig?.title || 'Service'}`}
             prefillEmail={currentUserEmail}
             prefillName={currentUserName}

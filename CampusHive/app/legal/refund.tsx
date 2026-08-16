@@ -40,7 +40,7 @@ export default function RefundPolicyScreen() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionHeader}>1. Overview</Text>
           <Text style={styles.bodyText}>
-            At CampusHive, we strive to ensure complete fairness and satisfaction for both student buyers and student freelancers. This policy outlines when refunds are issued for platform fees and service payments.
+            At OnlyStudents, we strive to ensure complete fairness and satisfaction for both student buyers and student freelancers. This policy outlines when refunds are issued for platform fees and service payments.
           </Text>
         </View>
 
@@ -52,7 +52,7 @@ export default function RefundPolicyScreen() {
           <View style={styles.bulletItem}>
             <Text style={styles.bulletDot}>•</Text>
             <Text style={styles.bulletText}>
-              <Text style={styles.boldText}>Seller Declines Order:</Text> If a seller declines your job request, your ₹6 platform fee is automatically credited back to your CampusHive account or refunded to your original payment method via Razorpay within 5-7 business days.
+              <Text style={styles.boldText}>Seller Declines Order:</Text> If a seller declines your job request, your ₹6 platform fee is automatically credited back to your OnlyStudents account or refunded to your original payment method via Razorpay within 5-7 business days.
             </Text>
           </View>
           <View style={styles.bulletItem}>
@@ -95,7 +95,7 @@ export default function RefundPolicyScreen() {
           </Text>
           <View style={styles.bulletItem}>
             <Text style={styles.bulletDot}>1.</Text>
-            <Text style={styles.bulletText}>Go to the <Text style={styles.boldText}>Earnings / Orders</Text> screen in your CampusHive app.</Text>
+            <Text style={styles.bulletText}>Go to the <Text style={styles.boldText}>Earnings / Orders</Text> screen in your OnlyStudents app.</Text>
           </View>
           <View style={styles.bulletItem}>
             <Text style={styles.bulletDot}>2.</Text>
@@ -103,7 +103,7 @@ export default function RefundPolicyScreen() {
           </View>
           <View style={styles.bulletItem}>
             <Text style={styles.bulletDot}>3.</Text>
-            <Text style={styles.bulletText}>Or email us directly at <Text style={styles.linkText}>refunds@campushive.in</Text> with your Order ID and transaction reference.</Text>
+            <Text style={styles.bulletText}>Or email us directly at <Text style={styles.linkText}>refunds@onlystudents.app</Text> with your Order ID and transaction reference.</Text>
           </View>
         </View>
 
@@ -117,7 +117,7 @@ export default function RefundPolicyScreen() {
         <View style={styles.footerCard}>
           <MaterialCommunityIcons name="help-circle-outline" size={20} color={Colors.primaryDark} />
           <Text style={styles.footerText}>
-            Need help with a payment or refund? Email <Text style={styles.boldText}>refunds@campushive.in</Text>
+            Need help with a payment or refund? Email <Text style={styles.boldText}>refunds@onlystudents.app</Text>
           </Text>
         </View>
       </ScrollView>

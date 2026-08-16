@@ -458,7 +458,7 @@ export default function EarningsScreen() {
           key: rzpData.keyId,
           amount: rzpData.amount,
           currency: rzpData.currency,
-          name: 'CampusHive',
+          name: 'OnlyStudents',
           description: paymentType === 'booking' ? 'Platform Booking Fee' : 'Freelancer Service Payment',
           order_id: rzpData.razorpayOrderId,
           handler: async (response: any) => {

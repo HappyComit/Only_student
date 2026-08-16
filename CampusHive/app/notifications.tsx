@@ -12,6 +12,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/theme';
 import { apiFetch, getToken } from '@/constants/api';
+import { connectSocket } from '@/constants/socket';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -484,13 +485,17 @@ function NotificationCard({
   );
 }
 
+// In-memory cache for instant zero-latency screen loads (Stale-While-Revalidate)
+let cachedNotifications: any[] = [];
+let cachedOrderStatusMap: Record<string, string> = {};
+
 export default function NotificationsScreen() {
   const styles = getStyles();
   const [filter, setFilter] = useState<FilterType>('all');
-  const [liveList, setLiveList] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [liveList, setLiveList] = useState<any[]>(cachedNotifications);
+  const [loading, setLoading] = useState<boolean>(cachedNotifications.length === 0);
   const [selectedNotif, setSelectedNotif] = useState<any | null>(null);
-  const [orderStatusMap, setOrderStatusMap] = useState<Record<string, string>>({});
+  const [orderStatusMap, setOrderStatusMap] = useState<Record<string, string>>(cachedOrderStatusMap);
 
   const handleAcceptOrder = async (relatedId?: string, notificationId?: string) => {
     try {
@@ -575,28 +580,12 @@ export default function NotificationsScreen() {
       const token = await getToken();
       if (!token) {
         setLiveList([]);
+        setLoading(false);
         return;
       }
 
+      // Fetch main notifications payload from network
       const res = await apiFetch('/notifications').catch(() => null);
-      
-      // Fetch BOTH seller and buyer orders to build complete status map
-      const sellerOrdersRes = await apiFetch<{ orders: any[] }>('/orders/seller').catch(() => null);
-      const buyerOrdersRes = await apiFetch<{ orders: any[] }>('/orders/buyer').catch(() => null);
-
-      const freshStatusMap: Record<string, string> = {};
-      if (sellerOrdersRes && Array.isArray(sellerOrdersRes.orders)) {
-        sellerOrdersRes.orders.forEach((o: any) => {
-          if (o.id) freshStatusMap[o.id] = o.status;
-        });
-      }
-      if (buyerOrdersRes && Array.isArray(buyerOrdersRes.orders)) {
-        buyerOrdersRes.orders.forEach((o: any) => {
-          if (o.id) freshStatusMap[o.id] = o.status;
-        });
-      }
-      // Fresh DB data overrides stale cache
-      setOrderStatusMap((prev) => ({ ...prev, ...freshStatusMap }));
 
       if (res && Array.isArray(res.notifications)) {
         const mapped = res.notifications.map((n: any) => ({
@@ -621,16 +610,65 @@ export default function NotificationsScreen() {
           unread: !n.isRead,
           relatedId: n.relatedId,
         }));
+        cachedNotifications = mapped;
         setLiveList(mapped);
       } else {
         setLiveList([]);
       }
+
+      // Hide loading spinner strictly when real network fetch finishes
+      setLoading(false);
+
+      // Background sync for order status updates (non-blocking)
+      Promise.all([
+        apiFetch<{ orders: any[] }>('/orders/seller').catch(() => null),
+        apiFetch<{ orders: any[] }>('/orders/buyer').catch(() => null),
+      ]).then(([sellerOrdersRes, buyerOrdersRes]) => {
+        const freshStatusMap: Record<string, string> = {};
+        if (sellerOrdersRes && Array.isArray(sellerOrdersRes.orders)) {
+          sellerOrdersRes.orders.forEach((o: any) => {
+            if (o.id) freshStatusMap[o.id] = o.status;
+          });
+        }
+        if (buyerOrdersRes && Array.isArray(buyerOrdersRes.orders)) {
+          buyerOrdersRes.orders.forEach((o: any) => {
+            if (o.id) freshStatusMap[o.id] = o.status;
+          });
+        }
+        cachedOrderStatusMap = { ...cachedOrderStatusMap, ...freshStatusMap };
+        setOrderStatusMap((prev) => ({ ...prev, ...freshStatusMap }));
+      });
     } catch {
-      setLiveList([]);
-    } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    let mounted = true;
+    const setupSocket = async () => {
+      const sock = await connectSocket();
+      if (!sock || !mounted) return;
+
+      const handleUpdate = () => {
+        fetchLiveNotifications();
+      };
+
+      sock.on('new_notification', handleUpdate);
+      sock.on('order_updated', handleUpdate);
+
+      return () => {
+        sock.off('new_notification', handleUpdate);
+        sock.off('order_updated', handleUpdate);
+      };
+    };
+
+    const cleanupPromise = setupSocket();
+
+    return () => {
+      mounted = false;
+      cleanupPromise.then((cleanup) => cleanup?.());
+    };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -657,6 +695,7 @@ export default function NotificationsScreen() {
   }, [liveList, filter]);
 
   const markRead = async (id: string) => {
+    cachedNotifications = cachedNotifications.map((item) => (item.id === id ? { ...item, unread: false } : item));
     setLiveList((prev) => prev.map((item) => (item.id === id ? { ...item, unread: false } : item)));
     try {
       await apiFetch(`/notifications/${id}/read`, { method: 'PUT' });
@@ -666,6 +705,7 @@ export default function NotificationsScreen() {
   };
 
   const markAllRead = async () => {
+    cachedNotifications = cachedNotifications.map((item) => ({ ...item, unread: false }));
     setLiveList((prev) => prev.map((item) => ({ ...item, unread: false })));
     try {
       await apiFetch('/notifications/read-all', { method: 'PUT' });
@@ -675,12 +715,14 @@ export default function NotificationsScreen() {
   };
 
   const handleDelete = (id: string) => {
+    cachedNotifications = cachedNotifications.filter((item) => item.id !== id);
     setLiveList((prev) => prev.filter((item) => item.id !== id));
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
         <View style={styles.heroCard}>
           <View style={styles.heroOrbA} />
           <View style={styles.heroOrbB} />
@@ -743,7 +785,16 @@ export default function NotificationsScreen() {
           <Text style={styles.sectionSubTitle}>{filter === 'all' ? 'All updates' : filter}</Text>
         </View>
 
-        {filteredData.length === 0 ? (
+        {loading ? (
+          <View style={styles.emptyCard}>
+            <View style={[styles.emptyIconWrap, { backgroundColor: Colors.primaryLight }]}>
+              <MaterialCommunityIcons name="bell-outline" size={32} color={Colors.primary} />
+            </View>
+            <ActivityIndicator size="large" color={Colors.primary} style={{ marginBottom: Spacing.xs }} />
+            <Text style={styles.emptyTitle}>Loading notifications...</Text>
+            <Text style={styles.emptySubTitle}>Fetching your latest updates</Text>
+          </View>
+        ) : filteredData.length === 0 ? (
           <View style={styles.emptyCard}>
             <View style={styles.emptyIconWrap}>
               <MaterialCommunityIcons name="bell-check-outline" size={34} color={Colors.success} />

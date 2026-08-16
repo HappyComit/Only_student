@@ -241,12 +241,12 @@ router.post('/forgot-password', authRateLimiter, async (req, res) => {
     // Try sending email via Nodemailer
     try {
       await transporter.sendMail({
-        from: `"CampusHive Security" <${process.env.SMTP_USER || 'no-reply@campushive.com'}>`,
+        from: `"OnlyStudents Security" <${process.env.SMTP_USER || 'no-reply@onlystudents.app'}>`,
         to: user.email,
-        subject: 'CampusHive Password Reset Code',
+        subject: 'OnlyStudents Password Reset Code',
         html: `
           <div style="font-family: Arial, sans-serif; padding: 20px; color: #111;">
-            <h2>CampusHive Password Reset</h2>
+            <h2>OnlyStudents Password Reset</h2>
             <p>Your 6-digit password reset verification code is:</p>
             <h1 style="color: #2563EB; letter-spacing: 4px;">${otp}</h1>
             <p>This code will expire in 15 minutes. If you did not request a password reset, please ignore this email.</p>

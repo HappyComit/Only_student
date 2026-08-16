@@ -78,7 +78,7 @@ router.post('/razorpay/create-order', authenticateToken, async (req, res) => {
       notes: {
         orderId: order.id,
         paymentType,
-        gigTitle: order.gig?.title || 'CampusHive Service',
+        gigTitle: order.gig?.title || 'OnlyStudents Service',
       },
     };
 
@@ -103,7 +103,7 @@ router.post('/razorpay/create-order', authenticateToken, async (req, res) => {
       keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
       orderId: order.id,
       paymentType,
-      gigTitle: order.gig?.title || 'CampusHive Service',
+      gigTitle: order.gig?.title || 'OnlyStudents Service',
     });
 
   } catch (error) {

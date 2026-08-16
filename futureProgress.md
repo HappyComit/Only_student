@@ -53,10 +53,10 @@
 - **Files:** `Backend/` (whole server), `CampusHive/constants/api.ts`
 - **Solution:** Successfully deployed live to Render at `https://only-student.onrender.com`. Updated `PROD_URL` in `CampusHive/constants/api.ts` and configured all 13 environment variables (Supabase DB, Storage, Razorpay, Gmail SMTP).
 
-### 9. [ ] Expo EAS APK Build
+### 9. [x] Expo EAS APK Build (COMPLETED)
 - **Problem:** No standalone APK exists yet for campus distribution.
 - **File:** `CampusHive/eas.json`
-- **Fix:** Run `npx eas build -p android --profile preview` → distribute `.apk` file to students.
+- **Solution:** Successfully linked Expo project (`onlystudent`) and configured `eas.json` `preview` profile to build a standalone Android `.apk`. Build queued and building on EAS cloud servers.
 
 ---
 
@@ -99,10 +99,10 @@
 | Priority | Total | Done | Remaining |
 |----------|-------|------|-----------|
 | 🔴 Must Fix | 4 | 4 | 0 |
-| 🟡 Should Fix | 5 | 3 | 2 |
+| 🟡 Should Fix | 5 | 4 | 1 |
 | 🟢 Polish | 6 | 5 | 1 |
-| **Total** | **15** | **12** | **3** |
+| **Total** | **15** | **13** | **2** |
 
 ---
 
-*Updated: August 5, 2026*
+*Updated: August 16, 2026*

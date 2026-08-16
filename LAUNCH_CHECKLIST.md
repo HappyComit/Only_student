@@ -8,7 +8,7 @@
 ## 🔴 CRITICAL — App Cannot Launch Without These
 
 ### ⚠️ Dev Bypasses to Revert Before Production Launch
-- [ ] **Undo Onboarding Skip Bypass**: Restore `getOnboardingCompleted()` check in `app/(auth)/splash.tsx` so returning users skip onboarding cards on launch.
+- [x] **Undo Onboarding Skip Bypass**: Restore `getOnboardingCompleted()` check in `app/(auth)/splash.tsx` so returning users skip onboarding cards on launch.
 
 ### Core Hiring Flow
 - [x] Test full hire flow (Buyer hires → pays ₹6 → Seller gets notification → opens Chat → Accept/Decline)

@@ -33,21 +33,21 @@ export default function TermsOfServiceScreen() {
           </View>
           <Text style={styles.heroTitle}>Terms & Conditions</Text>
           <Text style={styles.heroSubtitle}>
-            Last updated: August 12, 2026 • Governs your use of CampusHive services
+            Last updated: August 12, 2026 • Governs your use of OnlyStudents services
           </Text>
         </View>
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionHeader}>1. Acceptance of Terms</Text>
           <Text style={styles.bodyText}>
-            By creating an account, downloading, or using the CampusHive application, you agree to be bound by these Terms of Service. If you do not agree to these terms, you must not access or use CampusHive.
+            By creating an account, downloading, or using the OnlyStudents application, you agree to be bound by these Terms of Service. If you do not agree to these terms, you must not access or use OnlyStudents.
           </Text>
         </View>
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionHeader}>2. Student Eligibility & Accounts</Text>
           <Text style={styles.bodyText}>
-            CampusHive is exclusively designed for university and college students. You must be at least 18 years of age (or the legal age of majority in your jurisdiction) and possess a valid student identity or university email address to register and offer services.
+            OnlyStudents is exclusively designed for university and college students. You must be at least 18 years of age (or the legal age of majority in your jurisdiction) and possess a valid student identity or university email address to register and offer services.
           </Text>
           <View style={styles.bulletItem}>
             <Text style={styles.bulletDot}>•</Text>
@@ -62,7 +62,7 @@ export default function TermsOfServiceScreen() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionHeader}>3. Marketplace Services & Hiring Flow</Text>
           <Text style={styles.bodyText}>
-            CampusHive acts as a platform connecting student buyers with student sellers ("Freelancers"):
+            OnlyStudents acts as a platform connecting student buyers with student sellers ("Freelancers"):
           </Text>
           <View style={styles.bulletItem}>
             <Text style={styles.bulletDot}>•</Text>
@@ -102,7 +102,7 @@ export default function TermsOfServiceScreen() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionHeader}>5. Prohibited Conduct & Academic Integrity</Text>
           <Text style={styles.bodyText}>
-            Users agree NOT to use CampusHive for:
+            Users agree NOT to use OnlyStudents for:
           </Text>
           <View style={styles.bulletItem}>
             <Text style={styles.bulletDot}>•</Text>
@@ -128,7 +128,7 @@ export default function TermsOfServiceScreen() {
         <View style={styles.footerCard}>
           <MaterialCommunityIcons name="gavel" size={20} color={Colors.primaryDark} />
           <Text style={styles.footerText}>
-            Legal inquiries? Reach out to <Text style={styles.boldText}>legal@campushive.in</Text>
+            Legal inquiries? Reach out to <Text style={styles.boldText}>legal@onlystudents.app</Text>
           </Text>
         </View>
       </ScrollView>

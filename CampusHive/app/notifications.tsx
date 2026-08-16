@@ -494,6 +494,7 @@ export default function NotificationsScreen() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [liveList, setLiveList] = useState<any[]>(cachedNotifications);
   const [loading, setLoading] = useState<boolean>(cachedNotifications.length === 0);
+  const [openingChat, setOpeningChat] = useState<boolean>(false);
   const [selectedNotif, setSelectedNotif] = useState<any | null>(null);
   const [orderStatusMap, setOrderStatusMap] = useState<Record<string, string>>(cachedOrderStatusMap);
 
@@ -814,24 +815,67 @@ export default function NotificationsScreen() {
                 onPress={async () => {
                   markRead(item.id);
                   if (item.relatedId && (item.rawType?.includes('ORDER') || item.rawType?.includes('PAYMENT'))) {
-                    try {
-                      const res = await apiFetch<{ order: any }>(`/orders/${item.relatedId}`);
-                      if (res?.order) {
-                        const token = await getToken();
-                        if (token) {
-                          const profileRes = await apiFetch<{ user: any }>('/auth/profile').catch(() => null);
-                          const myId = profileRes?.user?.id;
-                          const partnerId = res.order.buyerId === myId ? res.order.sellerId : res.order.buyerId;
-                          if (partnerId) {
-                            router.push({
-                              pathname: '/chats/[id]',
-                              params: { id: partnerId },
-                            });
+                    // Check if this order is still pending — only redirect to chat for pending orders
+                    const resolvedStatus = currentStatus || item.orderStatus || '';
+                    const isStillPending =
+                      resolvedStatus === '' ||
+                      resolvedStatus === 'PENDING' ||
+                      resolvedStatus === 'PENDING_ACCEPTANCE' ||
+                      item.rawType === 'ORDER_REQUEST' ||
+                      item.rawType === 'PAYMENT_BOOKING';
+                    const isAlreadyActedUpon =
+                      resolvedStatus === 'IN_PROGRESS' ||
+                      resolvedStatus === 'ACCEPTED' ||
+                      resolvedStatus === 'DECLINED' ||
+                      resolvedStatus === 'COMPLETED' ||
+                      resolvedStatus === 'DELIVERED' ||
+                      item.rawType === 'ORDER_ACCEPTED' ||
+                      item.rawType === 'ORDER_DECLINED' ||
+                      item.rawType === 'ORDER_COMPLETED' ||
+                      item.rawType === 'ORDER_DELIVERED';
+
+                    if (isAlreadyActedUpon) {
+                      // Order already in progress/completed/declined — show detail modal, don't redirect to chat
+                      setSelectedNotif(item);
+                      return;
+                    }
+
+                    if (isStillPending) {
+                      setOpeningChat(true);
+                      try {
+                        const res = await apiFetch<{ order: any }>(`/orders/${item.relatedId}`);
+                        if (res?.order) {
+                          // Double-check the live status from the server
+                          const liveStatus = res.order.status || '';
+                          if (liveStatus === 'IN_PROGRESS' || liveStatus === 'ACCEPTED' || liveStatus === 'DECLINED' || liveStatus === 'COMPLETED' || liveStatus === 'DELIVERED') {
+                            // Server says it's no longer pending — update local map and show modal
+                            setOrderStatusMap((prev) => ({ ...prev, [item.relatedId]: liveStatus, [item.id]: liveStatus }));
+                            setOpeningChat(false);
+                            setSelectedNotif(item);
                             return;
                           }
+
+                          const token = await getToken();
+                          if (token) {
+                            const profileRes = await apiFetch<{ user: any }>('/auth/profile').catch(() => null);
+                            const myId = profileRes?.user?.id;
+                            const partnerId = res.order.buyerId === myId ? res.order.sellerId : res.order.buyerId;
+                            if (partnerId) {
+                              router.push({
+                                pathname: '/chats/[id]',
+                                params: { id: partnerId },
+                              });
+                              setTimeout(() => setOpeningChat(false), 1000);
+                              return;
+                            }
+                          }
                         }
+                      } catch {
+                        // Fallback
+                      } finally {
+                        setOpeningChat(false);
                       }
-                    } catch { }
+                    }
                   }
                   setSelectedNotif(item);
                 }}
@@ -927,6 +971,74 @@ export default function NotificationsScreen() {
           </Modal>
         );
       })()}
+
+      {openingChat && (
+        <Modal transparent visible animationType="fade">
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(6, 21, 46, 0.75)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 24,
+            }}
+          >
+            <View
+              style={{
+                width: '85%',
+                maxWidth: 320,
+                backgroundColor: '#FFFFFF',
+                borderRadius: 24,
+                paddingVertical: 28,
+                paddingHorizontal: 24,
+                alignItems: 'center',
+                ...Shadows.lg,
+              }}
+            >
+              <View
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 32,
+                  backgroundColor: '#DBEAFE',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 16,
+                  borderWidth: 2,
+                  borderColor: '#93C5FD',
+                }}
+              >
+                <MaterialCommunityIcons name="chat-processing-outline" size={32} color={Colors.primary} />
+              </View>
+
+              <ActivityIndicator size="large" color={Colors.primary} style={{ marginBottom: 12 }} />
+
+              <Text
+                style={{
+                  fontSize: 17,
+                  fontWeight: '800',
+                  color: Colors.text,
+                  textAlign: 'center',
+                  marginBottom: 4,
+                }}
+              >
+                Opening Chat...
+              </Text>
+
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: Colors.textSecondary,
+                  textAlign: 'center',
+                  fontWeight: '500',
+                }}
+              >
+                Connecting conversation securely
+              </Text>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }

@@ -37,6 +37,9 @@
 5. **[x] High-Visibility Home Page Notification Bell**:
    - Enhanced `CampusHive/components/ui/NotificationBell.tsx` with a high-contrast crisp white circular container (`#FFFFFF`), soft blue border (`#DBEAFE`), solid royal blue bell icon (`Colors.primary`), subtle drop shadow, and clean red unread badge ring (`#EF4444` with `#FFFFFF` border) for maximum visibility on the home page hero UI.
 
+6. **[x] Branded Chat Loading Overlay**:
+   - Added instant visual feedback modal spinner (`Opening Chat... Connecting conversation securely`) in `CampusHive/app/notifications.tsx` when opening chat conversations from notification items, replacing plain unresponsive screen delays with smooth visual buffering.
+
 ---
 
 ### ↺ How to Undo Changes (Instant Revert)

@@ -10,12 +10,14 @@ interface NotificationBellProps {
   color?: string;
   size?: number;
   style?: object;
+  variant?: 'hero' | 'light' | 'auto';
 }
 
 export default function NotificationBell({
-  color = Colors.white,
+  color,
   size = 22,
   style,
+  variant = 'auto',
 }: NotificationBellProps) {
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -48,13 +50,20 @@ export default function NotificationBell({
     }, [fetchUnreadCount])
   );
 
+  const isHeroMode =
+    variant === 'hero' ||
+    (variant === 'auto' && (!color || color === Colors.white || color === '#FFFFFF' || color === '#fff'));
+
+  const finalColor = color || (isHeroMode ? Colors.primary : Colors.text);
+  const containerStyle = isHeroMode ? styles.heroBellButton : styles.lightBellButton;
+
   return (
     <TouchableOpacity
-      style={[styles.bellButton, style]}
+      style={[containerStyle, style]}
       onPress={() => router.push('/notifications')}
-      activeOpacity={0.7}
+      activeOpacity={0.75}
     >
-      <MaterialCommunityIcons name="bell-outline" size={size} color={color} />
+      <MaterialCommunityIcons name="bell" size={size} color={finalColor} />
       {unreadCount > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>
@@ -67,20 +76,40 @@ export default function NotificationBell({
 }
 
 const styles = StyleSheet.create({
-  bellButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  heroBellButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#DBEAFE',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  lightBellButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F1F5F9',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.26)',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
   },
   badge: {
     position: 'absolute',
-    top: -3,
-    right: -3,
+    top: -2,
+    right: -2,
     minWidth: 18,
     height: 18,
     borderRadius: 9,
@@ -88,11 +117,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
-    borderWidth: 1.5,
-    borderColor: Colors.surface,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   badgeText: {
-    color: Colors.white,
+    color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '800',
     lineHeight: 12,

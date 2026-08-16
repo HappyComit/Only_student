@@ -314,9 +314,27 @@ export default function ChatDetailsScreen() {
       </View>
 
       {loading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={{ ...Typography.bodySmall, color: Colors.textSecondary, marginTop: Spacing.sm }}>Loading messages...</Text>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background }}>
+          <View style={{
+            width: 72,
+            height: 72,
+            borderRadius: 36,
+            backgroundColor: Colors.primary + '15',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 2,
+            borderColor: Colors.primary + '40',
+            marginBottom: Spacing.md,
+          }}>
+            <MaterialCommunityIcons name="shield-lock-outline" size={36} color={Colors.primary} />
+          </View>
+          <ActivityIndicator size="small" color={Colors.primary} style={{ marginBottom: Spacing.xs }} />
+          <Text style={{ ...Typography.bodySmall, color: Colors.text, fontWeight: '700' }}>
+            Securing student connection...
+          </Text>
+          <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginTop: 4 }}>
+            OnlyStudents
+          </Text>
         </View>
       ) : (
         <View style={{ flex: 1 }}>

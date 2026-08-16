@@ -595,17 +595,17 @@ export default function NotificationsScreen() {
           rawType: n.type,
           type: n.type?.toLowerCase().includes('order') ? 'order'
             : n.type?.toLowerCase().includes('review') ? 'review'
-            : n.type?.toLowerCase().includes('payment') ? 'payment'
-            : n.type?.toLowerCase().includes('community') ? 'community'
-            : 'order',
+              : n.type?.toLowerCase().includes('payment') ? 'payment'
+                : n.type?.toLowerCase().includes('community') ? 'community'
+                  : 'order',
           icon: n.type?.includes('REQUEST') ? 'bell-ring-outline'
             : n.type?.includes('ACCEPTED') ? 'check-circle-outline'
-            : n.type?.includes('DECLINED') ? 'close-circle-outline'
-            : n.type?.includes('DELIVERED') ? 'package-variant-closed'
-            : n.type?.includes('COMPLETED') ? 'check-decagram'
-            : n.type?.includes('REVIEW') ? 'star-outline'
-            : n.type?.includes('PAYMENT') ? 'cash-multiple'
-            : 'bell-outline',
+              : n.type?.includes('DECLINED') ? 'close-circle-outline'
+                : n.type?.includes('DELIVERED') ? 'package-variant-closed'
+                  : n.type?.includes('COMPLETED') ? 'check-decagram'
+                    : n.type?.includes('REVIEW') ? 'star-outline'
+                      : n.type?.includes('PAYMENT') ? 'cash-multiple'
+                        : 'bell-outline',
           time: new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           unread: !n.isRead,
           relatedId: n.relatedId,
@@ -831,7 +831,7 @@ export default function NotificationsScreen() {
                           }
                         }
                       }
-                    } catch {}
+                    } catch { }
                   }
                   setSelectedNotif(item);
                 }}

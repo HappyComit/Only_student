@@ -1,9 +1,13 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as SplashScreen from 'expo-splash-screen';
 import { Colors } from '@/constants/theme';
 import { AppModeProvider } from '@/constants/appMode';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+
+// Prevent native Expo launcher screen from flashing before React mounts
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export { ErrorBoundary };
 

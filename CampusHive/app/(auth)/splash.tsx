@@ -3,37 +3,42 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as SplashScreenModule from 'expo-splash-screen';
 import { getToken, isGuestUser, getOnboardingCompleted } from '@/constants/api';
 
 export default function SplashScreen() {
-  const logoScale = useRef(new Animated.Value(0.88)).current;
+  const logoScale = useRef(new Animated.Value(0.3)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
-  const bottomSlide = useRef(new Animated.Value(20)).current;
+  const bottomSlide = useRef(new Animated.Value(50)).current;
 
   useEffect(() => {
+    // Instantly hide the OS native Expo icon as soon as our custom blue gradient mounts
+    SplashScreenModule.hideAsync().catch(() => {});
+
     Animated.sequence([
       Animated.parallel([
-        Animated.timing(logoScale, {
+        Animated.spring(logoScale, {
           toValue: 1,
-          duration: 400,
+          tension: 40,
+          friction: 9,
           useNativeDriver: true,
         }),
         Animated.timing(logoOpacity, {
           toValue: 1,
-          duration: 400,
+          duration: 600,
           useNativeDriver: true,
         }),
       ]),
       Animated.parallel([
         Animated.timing(taglineOpacity, {
           toValue: 1,
-          duration: 400,
+          duration: 500,
           useNativeDriver: true,
         }),
         Animated.timing(bottomSlide, {
           toValue: 0,
-          duration: 400,
+          duration: 500,
           useNativeDriver: true,
         }),
       ]),
@@ -64,7 +69,7 @@ export default function SplashScreen() {
 
     const timer = setTimeout(() => {
       determineInitialRoute();
-    }, 1200);
+    }, 2800);
 
     return () => clearTimeout(timer);
   }, []);

@@ -51,6 +51,23 @@ export default function AuthScreen() {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
 
+  // Email Verification States
+  const [verifyModalVisible, setVerifyModalVisible] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [verifyOtp, setVerifyOtp] = useState('');
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendingOtp, setResendingOtp] = useState(false);
+
+  // Live Resend OTP Cooldown Timer
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendCooldown > 0) {
+      timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
   useEffect(() => {
     // 1. Continuous Live Pulse for Green Status Dot
     Animated.loop(
@@ -214,6 +231,51 @@ export default function AuthScreen() {
     }
   };
 
+  const handleVerifyOtp = async () => {
+    if (!verifyOtp.trim()) {
+      Alert.alert('Validation Error', 'Please enter the 6-digit verification code.');
+      return;
+    }
+    setVerifyingOtp(true);
+    try {
+      const data = await apiFetch<{ message: string; token: string; user: any }>('/auth/verify-email-otp', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: verifyEmail.trim(),
+          otp: verifyOtp.trim(),
+        }),
+      });
+
+      if (data.token) {
+        await saveToken(data.token);
+        setVerifyModalVisible(false);
+        Alert.alert('Email Verified', 'Your account is active! Welcome to OnlyStudents.');
+        router.replace('/(tabs)');
+      }
+    } catch (err: any) {
+      Alert.alert('Verification Failed', err.message || 'Incorrect or expired code.');
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || resendingOtp) return;
+    setResendingOtp(true);
+    try {
+      await apiFetch<{ message: string }>('/auth/send-verification-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email: verifyEmail.trim() }),
+      });
+      setResendCooldown(60);
+      Alert.alert('Code Sent', 'A new 6-digit verification code has been emailed to you.');
+    } catch (err: any) {
+      Alert.alert('Resend Failed', err.message || 'Failed to resend verification code.');
+    } finally {
+      setResendingOtp(false);
+    }
+  };
+
   const handleExploreGuest = async () => {
     await setGuestMode(true);
     router.replace('/(tabs)');
@@ -245,7 +307,7 @@ export default function AuthScreen() {
     try {
       if (mode === 'signup') {
         const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Math.floor(Math.random() * 1000);
-        await apiFetch('/auth/register', {
+        const resData = await apiFetch<{ message: string; requiresVerification?: boolean; email?: string }>('/auth/register', {
           method: 'POST',
           body: JSON.stringify({
             email: email.trim(),
@@ -259,18 +321,25 @@ export default function AuthScreen() {
           }),
         });
 
-        // Auto-login immediately into the new user account
-        const loginData = await apiFetch<{ token: string; user: any }>('/auth/login', {
-          method: 'POST',
-          body: JSON.stringify({
-            email: email.trim(),
-            password,
-          }),
-        });
+        if (resData.requiresVerification) {
+          setVerifyEmail(email.trim());
+          setVerifyOtp('');
+          setResendCooldown(60);
+          setVerifyModalVisible(true);
+        } else {
+          // Fallback auto-login if server didn't enforce verification
+          const loginData = await apiFetch<{ token: string; user: any }>('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({
+              email: email.trim(),
+              password,
+            }),
+          });
 
-        if (loginData.token) {
-          await saveToken(loginData.token);
-          router.replace('/(tabs)');
+          if (loginData.token) {
+            await saveToken(loginData.token);
+            router.replace('/(tabs)');
+          }
         }
       } else {
         const data = await apiFetch<{ token: string; user: any }>('/auth/login', {
@@ -686,6 +755,66 @@ export default function AuthScreen() {
                     />
                   </>
                 )}
+              </View>
+            </View>
+          </Modal>
+
+          {/* Email Verification OTP Modal */}
+          <Modal
+            visible={verifyModalVisible}
+            animationType="fade"
+            transparent
+            onRequestClose={() => setVerifyModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalGlassCard}>
+                <View style={styles.modalHeaderRow}>
+                  <Text style={styles.modalTitleText}>Verify Student Email</Text>
+                  <TouchableOpacity onPress={() => setVerifyModalVisible(false)}>
+                    <MaterialCommunityIcons name="close-circle-outline" size={26} color="#94A3B8" />
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.modalSubtitle}>
+                  We sent a 6-digit verification code to <Text style={{ color: '#60A5FA', fontWeight: 'bold' }}>{verifyEmail}</Text>. Enter it below to activate your account.
+                </Text>
+
+                <ModernTextInput
+                  placeholder="6-Digit Verification Code"
+                  value={verifyOtp}
+                  onChangeText={setVerifyOtp}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  icon={<MaterialCommunityIcons name="shield-check-outline" size={20} color="#93C5FD" />}
+                  style={{ marginBottom: Spacing.md }}
+                />
+
+                <ModernButton
+                  label={verifyingOtp ? 'Verifying Account...' : 'Verify & Continue'}
+                  variant="primary"
+                  size="md"
+                  onPress={handleVerifyOtp}
+                  loading={verifyingOtp}
+                  disabled={verifyingOtp}
+                  fullWidth
+                />
+
+                {/* Resend OTP Row with Cooldown Timer */}
+                <View style={{ marginTop: Spacing.md, alignItems: 'center' }}>
+                  <TouchableOpacity
+                    onPress={handleResendOtp}
+                    disabled={resendCooldown > 0 || resendingOtp}
+                    style={{ paddingVertical: 6, opacity: (resendCooldown > 0 || resendingOtp) ? 0.6 : 1 }}
+                  >
+                    <Text style={{ color: resendCooldown > 0 ? '#94A3B8' : '#60A5FA', fontSize: 13, fontWeight: '600' }}>
+                      {resendingOtp
+                        ? 'Sending Code...'
+                        : resendCooldown > 0
+                        ? `Resend Code in ${resendCooldown}s`
+                        : "Didn't receive code? Resend OTP"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </Modal>

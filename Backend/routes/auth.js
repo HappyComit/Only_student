@@ -59,7 +59,10 @@ router.post('/register', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // 5. Create and save the new user to the SQLite database
+    // 5. Generate 6-digit verification OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes validity
+
     const safe = sanitizeFields(req.body, {
       name: 100, bio: 500, university: 150, department: 150,
       year: 20, skills: 500, responseTime: 30, upiId: 50, phone: 20
@@ -67,14 +70,13 @@ router.post('/register', async (req, res) => {
 
     const newUser = await prisma.user.create({
       data: {
-        email,
+        email: email.trim().toLowerCase(),
         username: sanitize(username, 30),
         passwordHash,
         isSeller: isSeller || false,
         upiId: safe.upiId || null,
         bio: safe.bio || "",
         avatarUrl: avatarUrl || "",
-        // New Profile Fields:
         name: safe.name || null,
         university: safe.university || null,
         department: safe.department || null,
@@ -82,31 +84,32 @@ router.post('/register', async (req, res) => {
         skills: safe.skills || null,
         responseTime: safe.responseTime || null,
         phone: safe.phone || null,
-        isVerified: false // Default to false upon registration
+        isVerified: false,
+        resetOtp: otp,
+        resetOtpExpires: expiresAt
       }
     });
 
-    // 6. Return the registered user's details (excluding password hash)
+    // 6. Automatically dispatch verification OTP email
+    sendOtpEmail({
+      to: newUser.email,
+      otp,
+      title: 'Verify Your Email Address',
+      description: 'Welcome to OnlyStudents! Your 6-digit email verification code is:'
+    }).catch(err => console.error("Async Email Error on Signup:", err));
+
+    // 7. Return registration response requiring verification
     return res.status(201).json({
-      message: "Registration successful!",
+      message: "Registration successful! Please check your email for the 6-digit verification code.",
+      requiresVerification: true,
+      email: newUser.email,
       user: {
         id: newUser.id,
         email: newUser.email,
         username: newUser.username,
         isSeller: newUser.isSeller,
-        isAdmin: newUser.isAdmin,
-        upiId: newUser.upiId,
-        bio: newUser.bio,
-        avatarUrl: newUser.avatarUrl,
         name: newUser.name,
-        university: newUser.university,
-        department: newUser.department,
-        year: newUser.year,
-        skills: newUser.skills,
-        responseTime: newUser.responseTime,
-        phone: newUser.phone,
-        isVerified: newUser.isVerified,
-        createdAt: newUser.createdAt
+        isVerified: false
       }
     });
 
@@ -193,8 +196,18 @@ router.post('/login', authRateLimiter, async (req, res) => {
   }
 });
 const nodemailer = require('nodemailer');
+let Resend;
+try {
+  Resend = require('resend').Resend;
+} catch (e) {
+  console.warn("Resend package notice: optional SDK fallback mode");
+}
 
-// Setup Nodemailer transporter dynamically from environment variables
+// Setup Resend client if API key is provided
+const resendApiKey = process.env.RESEND_API_KEY;
+const resendClient = (Resend && resendApiKey) ? new Resend(resendApiKey) : null;
+
+// Setup Nodemailer transporter dynamically as secondary fallback
 const smtpPort = parseInt(process.env.SMTP_PORT || '465');
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -203,6 +216,191 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || ''
+  }
+});
+
+/**
+ * Unified Mail Dispatcher Helper
+ * Uses Resend API first (if key configured), falls back to Nodemailer SMTP
+ */
+async function sendOtpEmail({ to, otp, title = 'Email Verification Code', description = 'Your 6-digit verification code is:' }) {
+  console.log(`====================================================`);
+  console.log(` 📧 [AUTH OTP] Code for ${to}: ${otp}`);
+  console.log(`====================================================`);
+
+  const fromAddress = process.env.RESEND_FROM_EMAIL || 'OnlyStudents <onboarding@resend.dev>';
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; padding: 24px; color: #0F172A; max-width: 500px; margin: 0 auto; border: 1px solid #E2E8F0; border-radius: 12px; background-color: #FFFFFF;">
+      <h2 style="color: #1E3A8A; font-size: 22px; margin-bottom: 8px;">OnlyStudents</h2>
+      <p style="font-size: 14px; color: #475569; margin-bottom: 20px;">${description}</p>
+      <div style="background-color: #F1F5F9; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 20px;">
+        <span style="font-size: 32px; font-weight: 800; color: #2563EB; letter-spacing: 6px; font-family: monospace;">${otp}</span>
+      </div>
+      <p style="font-size: 12px; color: #64748B; margin-bottom: 0;">This verification code will expire in 15 minutes. If you did not request this code, please ignore this email.</p>
+    </div>
+  `;
+
+  // 1. Primary Attempt: Resend API
+  if (resendClient) {
+    try {
+      const response = await resendClient.emails.send({
+        from: fromAddress,
+        to,
+        subject: `OnlyStudents — ${title}`,
+        html: htmlContent
+      });
+      console.log(`✅ [RESEND SUCCESS] Sent OTP to ${to} (ID: ${response.data?.id || 'ok'})`);
+      return { success: true, provider: 'resend' };
+    } catch (resendErr) {
+      console.error(`⚠️ [RESEND FAIL] Resend error for ${to}:`, resendErr.message);
+    }
+  }
+
+  // 2. Secondary Fallback: Nodemailer SMTP
+  try {
+    await transporter.sendMail({
+      from: `"OnlyStudents Security" <${process.env.SMTP_USER || 'no-reply@onlystudents.app'}>`,
+      to,
+      subject: `OnlyStudents — ${title}`,
+      html: htmlContent
+    });
+    console.log(`✅ [NODEMAILER SUCCESS] Sent OTP to ${to}`);
+    return { success: true, provider: 'nodemailer' };
+  } catch (mailErr) {
+    console.warn(`⚠️ [MAIL WARNING] SMTP fallback failed for ${to}:`, mailErr.message);
+    return { success: false, error: mailErr.message };
+  }
+}
+
+/**
+ * @route   POST /api/auth/send-verification-otp
+ * @desc    Generates and emails a 6-digit OTP code to verify student email
+ */
+router.post('/send-verification-otp', authRateLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email address is required." });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
+    if (!user) {
+      return res.status(404).json({ error: "No registered user found with this email." });
+    }
+
+    // Generate random 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins validity
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetOtp: otp,
+        resetOtpExpires: expiresAt
+      }
+    });
+
+    // Send email via Resend / Nodemailer
+    await sendOtpEmail({
+      to: user.email,
+      otp,
+      title: 'Email Verification Code',
+      description: 'Your 6-digit verification code to activate your account is:'
+    });
+
+    return res.json({
+      message: "Verification code sent to your email address!",
+      email: user.email
+    });
+
+  } catch (error) {
+    console.error("Send Verification OTP Error:", error);
+    return res.status(500).json({ error: "Failed to send verification code." });
+  }
+});
+
+/**
+ * @route   POST /api/auth/verify-email-otp
+ * @desc    Verifies 6-digit OTP, marks user verified, and logs them in with JWT
+ */
+router.post('/verify-email-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ error: "Both email address and 6-digit verification code are required." });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
+    if (!user || !user.resetOtp || !user.resetOtpExpires) {
+      return res.status(400).json({ error: "No active verification request found for this email." });
+    }
+
+    if (user.resetOtp !== otp.trim()) {
+      return res.status(400).json({ error: "Incorrect 6-digit verification code." });
+    }
+
+    if (new Date() > new Date(user.resetOtpExpires)) {
+      return res.status(400).json({ error: "Verification code has expired. Please request a new code." });
+    }
+
+    // Update user to verified and clear OTP
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        resetOtp: null,
+        resetOtpExpires: null
+      }
+    });
+
+    // Issue JWT token
+    const token = jwt.sign(
+      {
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        username: updatedUser.username,
+        isSeller: updatedUser.isSeller
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    return res.json({
+      message: "Email verified successfully! Welcome to OnlyStudents.",
+      token,
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        username: updatedUser.username,
+        isSeller: updatedUser.isSeller,
+        isAdmin: updatedUser.isAdmin,
+        upiId: updatedUser.upiId,
+        bio: updatedUser.bio,
+        avatarUrl: updatedUser.avatarUrl,
+        name: updatedUser.name,
+        university: updatedUser.university,
+        department: updatedUser.department,
+        year: updatedUser.year,
+        skills: updatedUser.skills,
+        responseTime: updatedUser.responseTime,
+        phone: updatedUser.phone,
+        isVerified: updatedUser.isVerified,
+        createdAt: updatedUser.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error("Verify Email OTP Error:", error);
+    return res.status(500).json({ error: "Failed to verify code." });
   }
 });
 
@@ -234,28 +432,12 @@ router.post('/forgot-password', authRateLimiter, async (req, res) => {
       }
     });
 
-    console.log(`====================================================`);
-    console.log(` 📧 [AUTH] Password Reset OTP for ${user.email}: ${otp}`);
-    console.log(`====================================================`);
-
-    // Try sending email via Nodemailer
-    try {
-      await transporter.sendMail({
-        from: `"OnlyStudents Security" <${process.env.SMTP_USER || 'no-reply@onlystudents.app'}>`,
-        to: user.email,
-        subject: 'OnlyStudents Password Reset Code',
-        html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; color: #111;">
-            <h2>OnlyStudents Password Reset</h2>
-            <p>Your 6-digit password reset verification code is:</p>
-            <h1 style="color: #2563EB; letter-spacing: 4px;">${otp}</h1>
-            <p>This code will expire in 15 minutes. If you did not request a password reset, please ignore this email.</p>
-          </div>
-        `
-      });
-    } catch (mailErr) {
-      console.warn("Nodemailer transport notice (normal in dev without live SMTP credentials):", mailErr.message);
-    }
+    await sendOtpEmail({
+      to: user.email,
+      otp,
+      title: 'Password Reset Code',
+      description: 'Your 6-digit password reset verification code is:'
+    });
 
     return res.json({
       message: "Reset code generated and sent to email!"

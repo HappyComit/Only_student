@@ -441,8 +441,13 @@ export default function HomeScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchHomeData();
-    setRefreshing(false);
+    try {
+      await fetchHomeData();
+    } catch (e) {
+      // Ignore network errors on pull-to-refresh gracefully
+    } finally {
+      setRefreshing(false);
+    }
   }, []);
 
   useFocusEffect(

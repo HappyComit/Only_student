@@ -6,35 +6,34 @@ import { router } from 'expo-router';
 import { getToken, isGuestUser, getOnboardingCompleted } from '@/constants/api';
 
 export default function SplashScreen() {
-  const logoScale = useRef(new Animated.Value(0.3)).current;
+  const logoScale = useRef(new Animated.Value(0.88)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
-  const bottomSlide = useRef(new Animated.Value(50)).current;
+  const bottomSlide = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
     Animated.sequence([
       Animated.parallel([
-        Animated.spring(logoScale, {
+        Animated.timing(logoScale, {
           toValue: 1,
-          tension: 40,
-          friction: 9,
+          duration: 400,
           useNativeDriver: true,
         }),
         Animated.timing(logoOpacity, {
           toValue: 1,
-          duration: 600,
+          duration: 400,
           useNativeDriver: true,
         }),
       ]),
       Animated.parallel([
         Animated.timing(taglineOpacity, {
           toValue: 1,
-          duration: 500,
+          duration: 400,
           useNativeDriver: true,
         }),
         Animated.timing(bottomSlide, {
           toValue: 0,
-          duration: 500,
+          duration: 400,
           useNativeDriver: true,
         }),
       ]),
@@ -65,7 +64,7 @@ export default function SplashScreen() {
 
     const timer = setTimeout(() => {
       determineInitialRoute();
-    }, 2800);
+    }, 1200);
 
     return () => clearTimeout(timer);
   }, []);

@@ -358,34 +358,39 @@ const getStyles = () => {
     },
     communityName: {
       ...Typography.caption,
-      color: Colors.primary,
-      fontWeight: '700',
-      marginBottom: 3,
-    },
-    communityTitle: {
-      ...Typography.body,
+      ...Typography.subtitle,
       color: Colors.text,
-      fontWeight: '600',
-      lineHeight: 20,
     },
-    communityMetaRow: {
-      marginTop: Spacing.sm,
+    postAuthorRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: Spacing.md,
+      gap: Spacing.xs,
+      marginTop: Spacing.xs,
+      marginBottom: Spacing.xs,
     },
-    communityTime: {
-      ...Typography.caption,
+    postAuthorName: {
+      ...Typography.bodySmall,
+      color: Colors.text,
+      fontWeight: '600',
+    },
+    postContent: {
+      ...Typography.bodySmall,
       color: Colors.textSecondary,
+      marginBottom: Spacing.xs,
+    },
+    communityFooter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: Spacing.xs,
+      paddingTop: Spacing.xs,
+      borderTopWidth: 1,
+      borderTopColor: Colors.border,
     },
     communityLikesRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-    },
-    communityLikesText: {
-      ...Typography.caption,
-      color: Colors.textSecondary,
     },
   });
 };
@@ -398,6 +403,7 @@ export default function HomeScreen() {
   const [stats, setStats] = useState<any>({ completedOrders: 0, earnings: 0 });
   const [liveGigs, setLiveGigs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchHomeData = async () => {
     try {
@@ -432,6 +438,12 @@ export default function HomeScreen() {
       setLoading(false);
     }
   };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchHomeData();
+    setRefreshing(false);
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -483,6 +495,15 @@ export default function HomeScreen() {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={Colors.primary}
+          colors={[Colors.primary]}
+          progressBackgroundColor="#0F172A"
+        />
+      }
     >
       <View style={[styles.heroWrap, { paddingTop: insets.top + Spacing.sm }]}>
         <View style={styles.heroOrbOne} />

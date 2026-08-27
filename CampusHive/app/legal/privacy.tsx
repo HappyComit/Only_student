@@ -78,7 +78,7 @@ export default function PrivacyPolicyScreen() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionHeader}>3. How We Use Your Information</Text>
           <Text style={styles.bodyText}>
-            We utilize your data to provide, protect, and improve the CampusHive ecosystem:
+            We utilize your data to provide, protect, and improve the OnlyStudents ecosystem:
           </Text>
           <View style={styles.bulletItem}>
             <Text style={styles.bulletDot}>•</Text>
@@ -101,7 +101,7 @@ export default function PrivacyPolicyScreen() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionHeader}>4. Data Protection & Security</Text>
           <Text style={styles.bodyText}>
-            Your security is essential. All network traffic between CampusHive app and servers is encrypted via TLS/SSL. Financial transactions are tokenized and processed through Razorpay's PCI-DSS compliant infrastructure. We do not store raw UPI PINs or card information.
+            Your security is essential. All network traffic between OnlyStudents app and servers is encrypted via TLS/SSL. Financial transactions are tokenized and processed through Razorpay's PCI-DSS compliant infrastructure. We do not store raw UPI PINs or card information.
           </Text>
         </View>
 

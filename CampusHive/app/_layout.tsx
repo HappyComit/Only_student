@@ -7,7 +7,7 @@ import { AppModeProvider } from '@/constants/appMode';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 // Prevent native Expo launcher screen from flashing before React mounts
-SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.preventAutoHideAsync().catch(() => { });
 
 export { ErrorBoundary };
 

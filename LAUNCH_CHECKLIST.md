@@ -21,11 +21,11 @@
 - [ ] Test on slow 3G / bad network — make sure app doesn't crash or freeze
 
 ### Payments — Go Live
-- [ ] Complete Razorpay KYC (student ID or business registration)
-- [ ] Switch Razorpay from **test mode → live mode** in production environment
-- [ ] Set Razorpay live keys in Render environment variables (never in code)
-- [ ] Test one real ₹6 transaction end-to-end
-- [ ] Confirm money reaches your Razorpay account
+- [x] Complete Razorpay KYC (student ID or business registration)
+- [x] Switch Razorpay from **test mode → live mode** in production environment
+- [x] Set Razorpay live keys in Render environment variables (never in code)
+- [x] Test one real ₹6 transaction end-to-end
+- [x] Confirm money reaches your Razorpay account
 - [x] Set up refund policy — what happens if seller declines after buyer paid ₹6?
 
 ### Legal Pages (Required by Razorpay & App Stores)
@@ -35,32 +35,32 @@
 - [x] Add links to all three pages in the app's settings/profile screen
 
 ### App Distribution
-- [ ] Build a production **Android APK / AAB** with `eas build`
+- [x] Build a production **Android APK / AAB** with `eas build`
 - [ ] Test the production build on a real Android phone (not just Expo Go)
 - [ ] Build **iOS TestFlight** build (if targeting iOS users)
 - [ ] Either publish to **Google Play Store** OR share direct APK download link
-- [ ] Set up proper app icon and splash screen (no placeholder)
-- [ ] Set app name to "CampusHive" (not "Expo" or default)
+- [x] Set up proper app icon and splash screen (no placeholder)
+- [x] Set app name to "OnlyStudents" / "CampusHive" (not "Expo" or default)
 
 ---
 
 ## 🟡 IMPORTANT — Needed Within First Week of Launch
 
 ### Onboarding
-- [ ] Add a 3-screen onboarding flow on first app launch:
+- [x] Add a 3-screen onboarding flow on first app launch:
   - Screen 1: "Post your skill → Get discovered"
   - Screen 2: "Hire a fellow student → Pay securely"
   - Screen 3: "Chat, Deliver, Earn → Build your college portfolio"
-- [ ] Add a "Skip" button on onboarding
-- [ ] Show onboarding only once (save flag in AsyncStorage)
+- [x] Add a "Skip" button on onboarding
+- [x] Show onboarding only once (save flag in AsyncStorage)
 
 ### Error Handling & Stability
-- [ ] Add proper error messages when API calls fail (not silent crashes)
-- [ ] Add loading spinners wherever data is being fetched
-- [ ] Handle no-internet connection gracefully (show offline message)
-- [ ] Handle session expiry — auto redirect to login when token expires
-- [ ] Add try/catch in all critical payment and order API calls
-- [ ] Test app crash scenarios — what happens if backend is down?
+- [x] Add proper error messages when API calls fail (not silent crashes)
+- [x] Add loading spinners wherever data is being fetched
+- [x] Handle no-internet connection gracefully (show offline message)
+- [x] Handle session expiry — auto redirect to login when token expires
+- [x] Add try/catch in all critical payment and order API calls
+- [x] Test app crash scenarios — what happens if backend is down?
 
 ### Profile & Trust
 - [ ] Make profile photo upload mandatory before posting a service

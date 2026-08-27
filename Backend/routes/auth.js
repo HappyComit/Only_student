@@ -228,7 +228,12 @@ async function sendOtpEmail({ to, otp, title = 'Email Verification Code', descri
   console.log(` 📧 [AUTH OTP] Code for ${to}: ${otp}`);
   console.log(`====================================================`);
 
+  const smtpUser = process.env.SMTP_USER || 'no-reply@onlystudents.app';
   const fromAddress = process.env.RESEND_FROM_EMAIL || 'OnlyStudents <onboarding@resend.dev>';
+
+  // Plain text version (improves deliverability — spam filters prefer multipart emails)
+  const textContent = `OnlyStudents — ${title}\n\n${description}\n\nYour code: ${otp}\n\nThis code expires in 15 minutes. If you didn't request this, ignore this email.\n\n— OnlyStudents Team`;
+
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; padding: 24px; color: #0F172A; max-width: 500px; margin: 0 auto; border: 1px solid #E2E8F0; border-radius: 12px; background-color: #FFFFFF;">
       <h2 style="color: #1E3A8A; font-size: 22px; margin-bottom: 8px;">OnlyStudents</h2>
@@ -240,13 +245,35 @@ async function sendOtpEmail({ to, otp, title = 'Email Verification Code', descri
     </div>
   `;
 
-  // 1. Primary Attempt: Resend API
+  // 1. Primary Attempt: Nodemailer SMTP (Gmail — works to any email address)
+  try {
+    await transporter.sendMail({
+      from: `"OnlyStudents" <${smtpUser}>`,
+      replyTo: `"OnlyStudents Support" <${smtpUser}>`,
+      to,
+      subject: `${otp} is your OnlyStudents verification code`,
+      text: textContent,
+      html: htmlContent,
+      headers: {
+        'X-Priority': '1',
+        'X-Mailer': 'OnlyStudents App',
+        'List-Unsubscribe': `<mailto:${smtpUser}?subject=unsubscribe>`,
+      }
+    });
+    console.log(`✅ [NODEMAILER SUCCESS] Sent OTP to ${to}`);
+    return { success: true, provider: 'nodemailer' };
+  } catch (mailErr) {
+    console.warn(`⚠️ [NODEMAILER FAIL] SMTP error for ${to}:`, mailErr.message);
+  }
+
+  // 2. Secondary Fallback: Resend API (requires verified custom domain for non-owner emails)
   if (resendClient) {
     try {
       const response = await resendClient.emails.send({
         from: fromAddress,
         to,
-        subject: `OnlyStudents — ${title}`,
+        subject: `${otp} is your OnlyStudents verification code`,
+        text: textContent,
         html: htmlContent
       });
       console.log(`✅ [RESEND SUCCESS] Sent OTP to ${to} (ID: ${response.data?.id || 'ok'})`);
@@ -256,20 +283,8 @@ async function sendOtpEmail({ to, otp, title = 'Email Verification Code', descri
     }
   }
 
-  // 2. Secondary Fallback: Nodemailer SMTP
-  try {
-    await transporter.sendMail({
-      from: `"OnlyStudents Security" <${process.env.SMTP_USER || 'no-reply@onlystudents.app'}>`,
-      to,
-      subject: `OnlyStudents — ${title}`,
-      html: htmlContent
-    });
-    console.log(`✅ [NODEMAILER SUCCESS] Sent OTP to ${to}`);
-    return { success: true, provider: 'nodemailer' };
-  } catch (mailErr) {
-    console.warn(`⚠️ [MAIL WARNING] SMTP fallback failed for ${to}:`, mailErr.message);
-    return { success: false, error: mailErr.message };
-  }
+  console.error(`❌ [EMAIL FAILED] All providers failed for ${to}`);
+  return { success: false, error: 'All email providers failed' };
 }
 
 /**

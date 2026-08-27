@@ -18,6 +18,7 @@
     },
     "android": {
       "package": "com.onlystudents.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4F46E5"

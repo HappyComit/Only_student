@@ -338,7 +338,7 @@ export default function ProfileScreen() {
 
           <View style={styles.heroTopRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroEyebrow}>CampusHive Account</Text>
+              <Text style={styles.heroEyebrow}>OnlyStudents Account</Text>
               <Text style={styles.heroTitle} numberOfLines={1}>
                 {profile?.name ? `${profile.name}` : 'My Account'}
               </Text>
@@ -553,7 +553,7 @@ export default function ProfileScreen() {
           </View>
 
           <Text style={styles.footerText}>
-            CampusHive v1.0.0 • {profileInfo.initials} profile experience
+            OnlyStudents v1.0.0 • {profileInfo.initials} profile experience
           </Text>
         </View>
 

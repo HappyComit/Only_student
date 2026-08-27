@@ -110,6 +110,15 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Dedicated Account Deletion & Privacy Policy Routes (for Google Play & Razorpay compliance)
+app.get(['/delete-account', '/delete-account.html', '/public/delete-account.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'delete-account.html'));
+});
+
+app.get(['/privacy', '/privacy.html', '/public/privacy.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
+});
+
 // Mount our structured API endpoints under '/api' prefix
 app.use('/api/auth', authRoutes);
 app.use('/api/gigs', gigRoutes);

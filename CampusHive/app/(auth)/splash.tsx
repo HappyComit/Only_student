@@ -14,7 +14,7 @@ export default function SplashScreen() {
 
   useEffect(() => {
     // Instantly hide the OS native Expo icon as soon as our custom blue gradient mounts
-    SplashScreenModule.hideAsync().catch(() => {});
+    SplashScreenModule.hideAsync().catch(() => { });
 
     Animated.sequence([
       Animated.parallel([

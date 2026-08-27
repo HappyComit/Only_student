@@ -140,13 +140,13 @@ export async function apiFetch<T = any>(
     const timeoutId = setTimeout(() => {
       try {
         controller.abort();
-      } catch {}
+      } catch { }
     }, 50000);
 
     const onCallerAbort = () => {
       try {
         controller.abort();
-      } catch {}
+      } catch { }
     };
 
     if (callerSignal) {

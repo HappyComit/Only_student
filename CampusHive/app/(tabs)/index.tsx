@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -357,9 +358,9 @@ const getStyles = () => {
       flex: 1,
     },
     communityName: {
-      ...Typography.caption,
-      ...Typography.subtitle,
+      ...Typography.label,
       color: Colors.text,
+      fontWeight: '700',
     },
     postAuthorRow: {
       flexDirection: 'row',
@@ -391,6 +392,27 @@ const getStyles = () => {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
+    },
+    communityTitle: {
+      ...Typography.bodySmall,
+      color: Colors.text,
+      fontWeight: '600',
+      marginTop: 2,
+    },
+    communityMetaRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: Spacing.xs,
+    },
+    communityTime: {
+      ...Typography.caption,
+      color: Colors.textSecondary,
+    },
+    communityLikesText: {
+      ...Typography.caption,
+      color: Colors.textSecondary,
+      fontWeight: '600',
     },
   });
 };

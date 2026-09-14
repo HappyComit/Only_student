@@ -187,9 +187,8 @@ export default function AuthScreen() {
         body: JSON.stringify({ email: forgotEmail.trim() }),
       });
 
-      Alert.alert('Reset Code Sent', 'A 6-digit verification code has been sent to your email address. Please check your inbox.', [
-        { text: 'OK', onPress: () => setResetStep('verify') }
-      ]);
+      setResetStep('verify');
+      Alert.alert('Reset Code Sent', 'A 6-digit verification code has been sent to your email address. Please check your inbox.');
     } catch (err: any) {
       Alert.alert('Request Failed', err.message || 'Failed to send reset code.');
     } finally {
@@ -213,17 +212,11 @@ export default function AuthScreen() {
         }),
       });
 
-      Alert.alert('Success', data.message, [
-        {
-          text: 'Log In Now',
-          onPress: () => {
-            setForgotModalVisible(false);
-            setMode('login');
-            setEmail(forgotEmail);
-            setPassword(newPassword);
-          },
-        },
-      ]);
+      setForgotModalVisible(false);
+      setMode('login');
+      setEmail(forgotEmail);
+      setPassword(newPassword);
+      Alert.alert('Success', data.message || 'Password reset successfully!');
     } catch (err: any) {
       Alert.alert('Reset Failed', err.message || 'Failed to reset password.');
     } finally {

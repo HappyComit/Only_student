@@ -195,7 +195,6 @@ router.post('/login', authRateLimiter, async (req, res) => {
     return res.status(500).json({ error: "Something went wrong during login." });
   }
 });
-const nodemailer = require('nodemailer');
 let Resend;
 try {
   Resend = require('resend').Resend;
@@ -207,28 +206,16 @@ try {
 const resendApiKey = process.env.RESEND_API_KEY;
 const resendClient = (Resend && resendApiKey) ? new Resend(resendApiKey) : null;
 
-// Setup Nodemailer transporter dynamically as secondary fallback
-const smtpPort = parseInt(process.env.SMTP_PORT || '465');
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: smtpPort,
-  secure: smtpPort === 465, // true for port 465 (SSL), false for 587 (STARTTLS)
-  auth: {
-    user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || ''
-  }
-});
-
 /**
  * Unified Mail Dispatcher Helper
- * Uses Resend API first (if key configured), falls back to Nodemailer SMTP
+ * Uses Resend API to dispatch verification & password reset OTP emails
  */
 async function sendOtpEmail({ to, otp, title = 'Email Verification Code', description = 'Your 6-digit verification code is:' }) {
+  const startTime = Date.now();
   console.log(`====================================================`);
   console.log(` 📧 [AUTH OTP] Code for ${to}: ${otp}`);
   console.log(`====================================================`);
 
-  const smtpUser = process.env.SMTP_USER || 'no-reply@onlystudents.app';
   const fromAddress = process.env.RESEND_FROM_EMAIL || 'OnlyStudents <onboarding@resend.dev>';
 
   // Plain text version (improves deliverability — spam filters prefer multipart emails)
@@ -245,28 +232,6 @@ async function sendOtpEmail({ to, otp, title = 'Email Verification Code', descri
     </div>
   `;
 
-  // 1. Primary Attempt: Nodemailer SMTP (Gmail — works to any email address)
-  try {
-    await transporter.sendMail({
-      from: `"OnlyStudents" <${smtpUser}>`,
-      replyTo: `"OnlyStudents Support" <${smtpUser}>`,
-      to,
-      subject: `${otp} is your OnlyStudents verification code`,
-      text: textContent,
-      html: htmlContent,
-      headers: {
-        'X-Priority': '1',
-        'X-Mailer': 'OnlyStudents App',
-        'List-Unsubscribe': `<mailto:${smtpUser}?subject=unsubscribe>`,
-      }
-    });
-    console.log(`✅ [NODEMAILER SUCCESS] Sent OTP to ${to}`);
-    return { success: true, provider: 'nodemailer' };
-  } catch (mailErr) {
-    console.warn(`⚠️ [NODEMAILER FAIL] SMTP error for ${to}:`, mailErr.message);
-  }
-
-  // 2. Secondary Fallback: Resend API (requires verified custom domain for non-owner emails)
   if (resendClient) {
     try {
       const response = await resendClient.emails.send({
@@ -276,15 +241,18 @@ async function sendOtpEmail({ to, otp, title = 'Email Verification Code', descri
         text: textContent,
         html: htmlContent
       });
-      console.log(`✅ [RESEND SUCCESS] Sent OTP to ${to} (ID: ${response.data?.id || 'ok'})`);
-      return { success: true, provider: 'resend' };
+      const duration = Date.now() - startTime;
+      console.log(`✅ [RESEND SUCCESS] Sent OTP to ${to} in ${duration}ms (ID: ${response.data?.id || 'ok'})`);
+      return { success: true, provider: 'resend', durationMs: duration };
     } catch (resendErr) {
       console.error(`⚠️ [RESEND FAIL] Resend error for ${to}:`, resendErr.message);
     }
+  } else {
+    console.warn(`⚠️ [RESEND WARNING] resendClient is not initialized. Ensure RESEND_API_KEY is set in environment.`);
   }
 
-  console.error(`❌ [EMAIL FAILED] All providers failed for ${to}`);
-  return { success: false, error: 'All email providers failed' };
+  console.error(`❌ [EMAIL FAILED] Email dispatch failed for ${to}`);
+  return { success: false, error: 'Email dispatch failed' };
 }
 
 /**
@@ -316,13 +284,13 @@ router.post('/send-verification-otp', authRateLimiter, async (req, res) => {
       }
     });
 
-    // Send email via Resend / Nodemailer
-    await sendOtpEmail({
+    // Send email via Resend API asynchronously to optimize app response time
+    sendOtpEmail({
       to: user.email,
       otp,
       title: 'Email Verification Code',
       description: 'Your 6-digit verification code to activate your account is:'
-    });
+    }).catch(err => console.error("Async sendOtpEmail Error:", err));
 
     return res.json({
       message: "Verification code sent to your email address!",
@@ -447,12 +415,13 @@ router.post('/forgot-password', authRateLimiter, async (req, res) => {
       }
     });
 
-    await sendOtpEmail({
+    // Send reset OTP email asynchronously to optimize response time
+    sendOtpEmail({
       to: user.email,
       otp,
       title: 'Password Reset Code',
       description: 'Your 6-digit password reset verification code is:'
-    });
+    }).catch(err => console.error("Async sendOtpEmail Error:", err));
 
     return res.json({
       message: "Reset code generated and sent to email!"

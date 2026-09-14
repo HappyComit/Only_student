@@ -6,6 +6,7 @@ const http = require('http');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
+const compression = require('compression');
 const { initSocket } = require('./socket');
 const logger = require('./utils/logger');
 
@@ -23,6 +24,9 @@ const adminRoutes = require('./routes/admin');
 // Initialize the Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Enable HTTP response compression (gzip/brotli) for all responses
+app.use(compression());
 
 // Trust reverse proxy headers (required on Render/Cloudflare for rate limiting)
 app.set('trust proxy', 1);

@@ -70,6 +70,11 @@ model Gig {
   seller       User     @relation("SellerGigs", fields: [sellerId], references: [id]) // Connects to the User model
   orders       Order[]                                                               // All orders placed for this gig
   reviews      Review[]
+
+  @@index([category])
+  @@index([sellerId])
+  @@index([isFeatured])
+  @@index([createdAt])
 }
 
 // ==========================================
@@ -100,6 +105,11 @@ model Order {
   buyer        User     @relation("BuyerOrders", fields: [buyerId], references: [id])
   seller       User     @relation("SellerOrders", fields: [sellerId], references: [id])
   review       Review?
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ==========================================
@@ -116,6 +126,9 @@ model Message {
   // Database Relationships:
   sender     User     @relation("SentMessages", fields: [senderId], references: [id])
   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([senderId, receiverId])
+  @@index([createdAt])
 }
 
 // ==========================================
@@ -136,6 +149,9 @@ model Review {
   gig        Gig      @relation(fields: [gigId], references: [id])
   reviewer   User     @relation("Reviewer", fields: [reviewerId], references: [id])
   seller     User     @relation("Reviewee", fields: [sellerId], references: [id])
+
+  @@index([gigId])
+  @@index([sellerId])
 }
 
 // ==========================================
@@ -153,5 +169,8 @@ model Notification {
 
   // Database Relationships:
   user User @relation("UserNotifications", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([isRead])
 }
 

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -17,6 +18,7 @@ import Avatar from '@/components/ui/Avatar';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import NotificationBell from '@/components/ui/NotificationBell';
 import { apiFetch } from '@/constants/api';
+import { cachedFetch } from '@/constants/apiCache';
 
 export interface MappedFreelancer {
   id: string;
@@ -189,14 +191,19 @@ function QuickFilterRow({
   );
 }
 
-function FreelancerCard({ item }: { item: MappedFreelancer }) {
+const FreelancerCard = React.memo(function FreelancerCard({ item }: { item: MappedFreelancer }) {
   const minPrice = getMinPrice(item);
 
   return (
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.9}
-      onPress={() => router.push(`/marketplace/${item.id}`)}
+      onPress={() => {
+        // Prefetch gig detail + reviews into cache while navigating
+        cachedFetch(`/gigs/${item.id}`);
+        cachedFetch(`/reviews/gig/${item.id}`);
+        router.push(`/marketplace/${item.id}`);
+      }}
     >
       <View style={styles.cardTopRow}>
         <View style={styles.avatarWrap}>
@@ -269,7 +276,7 @@ function FreelancerCard({ item }: { item: MappedFreelancer }) {
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 export default function MarketplaceScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -280,11 +287,11 @@ export default function MarketplaceScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchGigs = async (showLoadingIndicator = true) => {
+  const fetchGigs = async (showLoadingIndicator = true, forceRefresh = false) => {
     if (showLoadingIndicator) setLoading(true);
     try {
-      // Fetch all gigs from backend
-      const data = await apiFetch<{ count: number; gigs: any[] }>('/gigs');
+      // Fetch all gigs from backend (cached)
+      const data = await cachedFetch<{ count: number; gigs: any[] }>('/gigs', { forceRefresh });
       setGigs(data.gigs || []);
     } catch (err: any) {
       console.error('Failed to load gigs:', err);
@@ -300,7 +307,7 @@ export default function MarketplaceScreen() {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchGigs(false);
+    fetchGigs(false, true); // forceRefresh on pull-to-refresh
   };
 
   // Convert backend gigs array to the shape expected by the frontend card UI
@@ -408,6 +415,10 @@ export default function MarketplaceScreen() {
         contentContainerStyle={styles.listContent}
         refreshing={refreshing}
         onRefresh={handleRefresh}
+        initialNumToRender={6}
+        maxToRenderPerBatch={8}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === 'android'}
         ListHeaderComponent={
           <View style={styles.headerBlock}>
             <HeroBanner activeCount={mappedGigs.length} />

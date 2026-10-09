@@ -4,6 +4,14 @@ const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
 const { sanitize } = require('../middleware/sanitize');
 
+// In-memory feed cache (15-second TTL) to eliminate repetitive database queries
+const feedCache = new Map();
+const CACHE_TTL_MS = 15000;
+
+function clearFeedCache() {
+  feedCache.clear();
+}
+
 /**
  * @route   POST /api/gigs
  * @desc    Creates a new freelance gig listing (Secure route - Sellers only)
@@ -46,6 +54,9 @@ router.post('/', authenticateToken, async (req, res) => {
       }
     });
 
+    // Invalidate cached feed so newly posted gigs show up immediately
+    clearFeedCache();
+
     return res.status(201).json({
       message: "Gig posted successfully!",
       gig: newGig
@@ -65,6 +76,13 @@ router.get('/', async (req, res) => {
   try {
     const { search, sellerId, featured, category } = req.query;
     
+    // Check in-memory cache for fast response (0ms DB delay)
+    const cacheKey = JSON.stringify({ search, sellerId, featured, category, page: req.query.page, limit: req.query.limit });
+    const cachedEntry = feedCache.get(cacheKey);
+    if (cachedEntry && (Date.now() - cachedEntry.timestamp < CACHE_TTL_MS)) {
+      return res.json(cachedEntry.data);
+    }
+    
     // Build dynamic query filters
     const whereConditions = {};
 
@@ -83,11 +101,11 @@ router.get('/', async (req, res) => {
       whereConditions.isFeatured = true;
     }
 
-    // Search filter: looks for keyword matches inside the Title OR Description
+    // Search filter: looks for keyword matches inside the Title OR Description (case-insensitive)
     if (search) {
       whereConditions.OR = [
-        { title: { contains: search } },
-        { description: { contains: search } }
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
       ];
     }
 
@@ -96,35 +114,40 @@ router.get('/', async (req, res) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
     const skip = (page - 1) * limit;
 
-    // Count total matching gigs for pagination metadata
-    const totalCount = await prisma.gig.count({ where: whereConditions });
-
-    // Query database with constraints and include expanded Seller profile details to align with the frontend cards
-    const gigs = await prisma.gig.findMany({
-      where: whereConditions,
-      orderBy: { createdAt: 'desc' }, // Newest gigs first
-      skip,
-      take: limit,
-      include: {
-        seller: {
-          select: {
-            username: true,
-            name: true,
-            avatarUrl: true,
-            upiId: true,
-            university: true,
-            year: true,
-            skills: true,
-            responseTime: true,
-            isVerified: true
+    // Run count + data query in parallel (saves one round-trip)
+    const [totalCount, gigs] = await Promise.all([
+      prisma.gig.count({ where: whereConditions }),
+      prisma.gig.findMany({
+        where: whereConditions,
+        orderBy: { createdAt: 'desc' }, // Newest gigs first
+        skip,
+        take: limit,
+        include: {
+          seller: {
+            select: {
+              username: true,
+              name: true,
+              avatarUrl: true,
+              upiId: true,
+              university: true,
+              year: true,
+              skills: true,
+              responseTime: true,
+              isVerified: true
+            }
           }
         }
-      }
-    });
+      })
+    ]);
 
     const totalPages = Math.ceil(totalCount / limit);
+    const responsePayload = { count: gigs.length, gigs, page, totalPages, totalCount };
 
-    return res.json({ count: gigs.length, gigs, page, totalPages, totalCount });
+    // Save payload to in-memory cache (cap at 100 unique keys to prevent unbounded growth)
+    if (feedCache.size >= 100) feedCache.clear();
+    feedCache.set(cacheKey, { timestamp: Date.now(), data: responsePayload });
+
+    return res.json(responsePayload);
 
   } catch (error) {
     console.error("Fetch Gigs Error:", error);
@@ -184,3 +207,4 @@ router.get('/:id', async (req, res) => {
 });
 
 module.exports = router;
+module.exports.clearFeedCache = clearFeedCache;

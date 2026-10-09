@@ -392,9 +392,11 @@ const getStyles = () => {
   });
 };
 
+// Moved to module scope — StyleSheet.create() runs once at load, not on every render
+const styles = getStyles();
+
 export default function EarningsScreen() {
   const { isFreelancerMode } = useAppMode();
-  const styles = getStyles();
   const [range, setRange] = useState<RangeType>('6m');
 
   const [orders, setOrders] = useState<any[]>([]);

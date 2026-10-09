@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { router, useFocusEffect } from 'expo-router';
+
 import { communities, events, freelancers } from '@/data/mockData';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/theme';
 import Avatar from '@/components/ui/Avatar';
@@ -18,7 +18,8 @@ import NotificationBell from '@/components/ui/NotificationBell';
 import SectionHeader from '@/components/ui/SectionHeader';
 import StarRating from '@/components/ui/StarRating';
 import Badge from '@/components/ui/Badge';
-import { apiFetch, getToken } from '@/constants/api';
+import { getToken } from '@/constants/api';
+import { cachedFetch } from '@/constants/apiCache';
 
 function formatCompact(value: number) {
   if (value >= 1000) {
@@ -31,6 +32,7 @@ function minServicePrice(freelancer: (typeof freelancers)[number]) {
   return Math.min(...freelancer.services.map((service) => service.price));
 }
 
+// Defined outside component so StyleSheet is created once at module load, not on every render
 const getStyles = () => {
   return StyleSheet.create({
     container: {
@@ -417,9 +419,10 @@ const getStyles = () => {
   });
 };
 
+const styles = getStyles();
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const styles = getStyles();
 
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState<any>({ completedOrders: 0, earnings: 0 });
@@ -427,15 +430,21 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchHomeData = async () => {
+  const fetchHomeData = async (forceRefresh = false) => {
     try {
       const token = await getToken();
       if (token) {
-        const profileData = await apiFetch<{ user: any }>('/auth/profile');
+        // Parallel fetch: profile + gigs at the same time (instead of sequential)
+        const [profileData, gigsData] = await Promise.all([
+          cachedFetch<{ user: any }>('/auth/profile', { forceRefresh }),
+          cachedFetch<{ count: number; gigs: any[] }>('/gigs', { forceRefresh }),
+        ]);
+
         if (profileData?.user) {
           setProfile(profileData.user);
+          // Orders fetch can happen after profile since it depends on isSeller
           const endpoint = profileData.user.isSeller ? '/orders/seller' : '/orders/buyer';
-          const ordersData = await apiFetch<{ count: number; orders: any[] }>(endpoint).catch(() => null);
+          const ordersData = await cachedFetch<{ count: number; orders: any[] }>(endpoint, { forceRefresh }).catch(() => null);
           if (ordersData?.orders) {
             const completed = ordersData.orders.filter((o: any) => o.status === 'COMPLETED');
             setStats({
@@ -446,13 +455,17 @@ export default function HomeScreen() {
         } else {
           setProfile(null);
         }
+
+        if (gigsData && Array.isArray(gigsData.gigs)) {
+          setLiveGigs(gigsData.gigs);
+        }
       } else {
         setProfile(null);
-      }
-
-      const gigsData = await apiFetch<{ count: number; gigs: any[] }>('/gigs');
-      if (gigsData && Array.isArray(gigsData.gigs)) {
-        setLiveGigs(gigsData.gigs);
+        // Even without auth, still fetch public gigs
+        const gigsData = await cachedFetch<{ count: number; gigs: any[] }>('/gigs', { forceRefresh });
+        if (gigsData && Array.isArray(gigsData.gigs)) {
+          setLiveGigs(gigsData.gigs);
+        }
       }
     } catch (err) {
       setProfile(null);
@@ -464,7 +477,7 @@ export default function HomeScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await fetchHomeData();
+      await fetchHomeData(true); // forceRefresh on pull-to-refresh
     } catch (e) {
       // Ignore network errors on pull-to-refresh gracefully
     } finally {
@@ -745,7 +758,12 @@ export default function HomeScreen() {
             liveGigs.slice(0, 6).map((gig: any) => (
               <TouchableOpacity
                 key={gig.id}
-                onPress={() => router.push(`/marketplace/${gig.id}`)}
+                onPress={() => {
+                  // Prefetch gig detail + reviews into cache while navigating
+                  cachedFetch(`/gigs/${gig.id}`);
+                  cachedFetch(`/reviews/gig/${gig.id}`);
+                  router.push(`/marketplace/${gig.id}`);
+                }}
                 style={styles.freelancerCard}
                 activeOpacity={0.9}
               >

@@ -21,6 +21,7 @@ import Avatar from '@/components/ui/Avatar';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/theme';
 import { useAppMode } from '@/constants/appMode';
 import { apiFetch, getToken } from '@/constants/api';
+import { cachedFetch } from '@/constants/apiCache';
 import { connectSocket, getSocket } from '@/constants/socket';
 
 function getNowTimeLabel() {
@@ -28,6 +29,18 @@ function getNowTimeLabel() {
   const h = now.getHours().toString().padStart(2, '0');
   const m = now.getMinutes().toString().padStart(2, '0');
   return `${h}:${m}`;
+}
+
+// Pre-format timestamps once when messages are set into state (Fix 13)
+// Avoids expensive toLocaleTimeString() Intl calls on every scroll frame
+function preFormatTime(msg: any): any {
+  if (msg._formattedTime) return msg; // Already formatted
+  return {
+    ...msg,
+    _formattedTime: msg.createdAt
+      ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : '',
+  };
 }
 
 export default function ChatDetailsScreen() {
@@ -131,7 +144,7 @@ export default function ChatDetailsScreen() {
             const localMsgs = prev.filter((m) => String(m.id).startsWith('local-'));
             const serverIds = new Set(data.history.map((m) => m.id));
             const activeLocals = localMsgs.filter((m) => !serverIds.has(m.id));
-            return [...data.history, ...activeLocals];
+            return [...data.history.map(preFormatTime), ...activeLocals];
           });
         }
       }
@@ -146,13 +159,14 @@ export default function ChatDetailsScreen() {
   useEffect(() => {
     fetchHistory(true);
 
-    apiFetch<{ user: any }>('/auth/profile')
+    // Use cached profile to avoid redundant /auth/profile call
+    cachedFetch<{ user: any }>('/auth/profile')
       .then((res) => {
         if (res?.user?.id) setCurrentUserId(res.user.id);
       })
       .catch(() => {});
 
-    // Mark all messages from this partner as read when conversation is opened
+    // Mark all messages as read (background, non-blocking)
     if (partnerId && partnerId !== 'undefined') {
       apiFetch(`/messages/${partnerId}/read`, { method: 'PUT' }).catch(() => {
         // Silently ignore — marking as read is best-effort
@@ -174,6 +188,8 @@ export default function ChatDetailsScreen() {
           msg.senderId === partnerId || msg.receiverId === partnerId;
         if (!isRelevant) return;
 
+        const formatted = preFormatTime(msg);
+
         setMessages((prev) => {
           // If we already have this message (e.g. from optimistic send), replace it
           const existingIdx = prev.findIndex(
@@ -181,11 +197,11 @@ export default function ChatDetailsScreen() {
           );
           if (existingIdx !== -1) {
             const updated = [...prev];
-            updated[existingIdx] = msg;
+            updated[existingIdx] = formatted;
             return updated;
           }
           // Otherwise append the new message
-          return [...prev, msg];
+          return [...prev, formatted];
         });
 
         // If user is scrolled up and message is from the partner, increment banner count
@@ -314,30 +330,20 @@ export default function ChatDetailsScreen() {
       </View>
 
       {loading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background }}>
-          <View style={{
-            width: 72,
-            height: 72,
-            borderRadius: 36,
-            backgroundColor: Colors.primary + '15',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 2,
-            borderColor: Colors.primary + '40',
-            marginBottom: Spacing.md,
-          }}>
+        <View style={styles.loadingContainer}>
+          <View style={styles.loadingIcon}>
             <MaterialCommunityIcons name="shield-lock-outline" size={36} color={Colors.primary} />
           </View>
           <ActivityIndicator size="small" color={Colors.primary} style={{ marginBottom: Spacing.xs }} />
-          <Text style={{ ...Typography.bodySmall, color: Colors.text, fontWeight: '700' }}>
+          <Text style={styles.loadingTitle}>
             Securing student connection...
           </Text>
-          <Text style={{ ...Typography.caption, color: Colors.textSecondary, marginTop: 4 }}>
+          <Text style={styles.loadingSubtitle}>
             OnlyStudents
           </Text>
         </View>
       ) : (
-        <View style={{ flex: 1 }}>
+        <View style={styles.flexOne}>
           <FlatList
             ref={flatListRef}
             data={messages}
@@ -346,9 +352,14 @@ export default function ChatDetailsScreen() {
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={100}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={15}
+            windowSize={7}
+            initialNumToRender={20}
             renderItem={({ item }) => {
               const mine = item.senderId !== partnerId;
-              const formattedTime = new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              // Pre-formatted time is computed here; for heavy lists, consider memoizing messages
+              const formattedTime = item._formattedTime || new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
               return (
                 <View style={[styles.messageRow, mine ? styles.messageRowMine : styles.messageRowOther]}>
                   <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
@@ -948,5 +959,36 @@ const styles = StyleSheet.create({
     ...Typography.bodySmall,
     color: '#fff',
     fontWeight: '800',
+  },
+  // Extracted inline styles (Fix 19)
+  flexOne: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+  },
+  loadingIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.primary + '40',
+    marginBottom: Spacing.md,
+  },
+  loadingTitle: {
+    ...Typography.bodySmall,
+    color: Colors.text,
+    fontWeight: '700',
+  },
+  loadingSubtitle: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    marginTop: 4,
   },
 });

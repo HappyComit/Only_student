@@ -1,4 +1,4 @@
-// Tells Prisma to use a local SQLite database that saves to a file named 'dev.db'
+// Supabase PostgreSQL database connection
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
@@ -46,6 +46,9 @@ model User {
   reviewsGiven   Review[]  @relation("Reviewer")
   reviewsReceived Review[] @relation("Reviewee")
   notifications   Notification[] @relation("UserNotifications")
+
+  @@index([isSeller])
+  @@index([isVerified])
 }
 
 // ==========================================
@@ -67,7 +70,7 @@ model Gig {
   category     String                       // Gig category (e.g., "dev", "design", "video", "photo")
 
   // Database Relationships:
-  seller       User     @relation("SellerGigs", fields: [sellerId], references: [id]) // Connects to the User model
+  seller       User     @relation("SellerGigs", fields: [sellerId], references: [id], onDelete: Cascade) // Connects to the User model
   orders       Order[]                                                               // All orders placed for this gig
   reviews      Review[]
 
@@ -101,13 +104,16 @@ model Order {
   createdAt             DateTime @default(now())      // Timestamp when order was created
 
   // Database Relationships:
-  gig          Gig      @relation(fields: [gigId], references: [id])
-  buyer        User     @relation("BuyerOrders", fields: [buyerId], references: [id])
-  seller       User     @relation("SellerOrders", fields: [sellerId], references: [id])
+  gig          Gig      @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  buyer        User     @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller       User     @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Cascade)
   review       Review?
 
   @@index([buyerId])
   @@index([sellerId])
+  @@index([gigId])
+  @@index([buyerId, status])
+  @@index([sellerId, status])
   @@index([status])
   @@index([createdAt])
 }
@@ -124,10 +130,12 @@ model Message {
   createdAt  DateTime @default(now())     // Timestamp when message was sent
 
   // Database Relationships:
-  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
-  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@index([senderId, receiverId])
+  @@index([senderId, createdAt(sort: Desc)])
+  @@index([receiverId, isRead, createdAt(sort: Desc)])
   @@index([createdAt])
 }
 
@@ -145,13 +153,14 @@ model Review {
   createdAt  DateTime @default(now())
 
   // Database Relationships:
-  order      Order    @relation(fields: [orderId], references: [id])
-  gig        Gig      @relation(fields: [gigId], references: [id])
-  reviewer   User     @relation("Reviewer", fields: [reviewerId], references: [id])
-  seller     User     @relation("Reviewee", fields: [sellerId], references: [id])
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  gig        Gig      @relation(fields: [gigId], references: [id], onDelete: Cascade)
+  reviewer   User     @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  seller     User     @relation("Reviewee", fields: [sellerId], references: [id], onDelete: Cascade)
 
   @@index([gigId])
   @@index([sellerId])
+  @@index([reviewerId])
 }
 
 // ==========================================
@@ -168,9 +177,10 @@ model Notification {
   createdAt DateTime @default(now())
 
   // Database Relationships:
-  user User @relation("UserNotifications", fields: [userId], references: [id])
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isRead])
+  @@index([userId, isRead, createdAt(sort: Desc)])
 }
 

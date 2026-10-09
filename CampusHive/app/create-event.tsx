@@ -386,8 +386,10 @@ function ChoiceRow({
   );
 }
 
+// Moved to module scope — StyleSheet.create() runs once at load, not on every render
+const styles = getStyles();
+
 export default function CreateEventScreen() {
-  const styles = getStyles();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');

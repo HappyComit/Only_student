@@ -9,8 +9,7 @@ import {
   View,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { router, useFocusEffect } from 'expo-router';
 import { events } from '@/data/mockData';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/theme';
 import ScreenHeader from '@/components/ui/ScreenHeader';

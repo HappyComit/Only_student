@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -12,10 +12,22 @@ export default function SplashScreen() {
   const taglineOpacity = useRef(new Animated.Value(0)).current;
   const bottomSlide = useRef(new Animated.Value(50)).current;
 
+  // Track both conditions: animation minimum time and route resolution
+  const [animReady, setAnimReady] = useState(false);
+  const [targetRoute, setTargetRoute] = useState<string | null>(null);
+
+  // Navigate as soon as BOTH animation minimum and route check are done
+  useEffect(() => {
+    if (animReady && targetRoute) {
+      router.replace(targetRoute as any);
+    }
+  }, [animReady, targetRoute]);
+
   useEffect(() => {
     // Instantly hide the OS native Expo icon as soon as our custom blue gradient mounts
     SplashScreenModule.hideAsync().catch(() => { });
 
+    // ── 1. Start animation ──────────────────────────────────────────
     Animated.sequence([
       Animated.parallel([
         Animated.spring(logoScale, {
@@ -44,34 +56,36 @@ export default function SplashScreen() {
       ]),
     ]).start();
 
+    // ── 2. Minimum display time (1.2s) — enough for the logo to animate in ──
+    const minTimer = setTimeout(() => setAnimReady(true), 1200);
+
+    // ── 3. Route check runs IN PARALLEL with animation (not after 2.8s) ──
     const determineInitialRoute = async () => {
       try {
         const token = await getToken();
         const isGuest = await isGuestUser();
         if (token || isGuest) {
-          router.replace('/(tabs)');
+          setTargetRoute('/(tabs)');
           return;
         }
 
         const hasCompletedOnboarding = await getOnboardingCompleted();
         if (hasCompletedOnboarding) {
-          router.replace('/(auth)/auth');
+          setTargetRoute('/(auth)/auth');
           return;
         }
 
         // First-time non-logged-in users view the onboarding cards
-        router.replace('/(auth)/onboarding');
+        setTargetRoute('/(auth)/onboarding');
       } catch (error) {
         console.error('Error determining initial route:', error);
-        router.replace('/(auth)/onboarding');
+        setTargetRoute('/(auth)/onboarding');
       }
     };
 
-    const timer = setTimeout(() => {
-      determineInitialRoute();
-    }, 2800);
+    determineInitialRoute();
 
-    return () => clearTimeout(timer);
+    return () => clearTimeout(minTimer);
   }, []);
 
   return (

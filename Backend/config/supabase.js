@@ -39,12 +39,12 @@ async function ensureBucket(bucketName) {
  * Uploads a file buffer to a specified Supabase bucket and returns the public URL.
  * Includes automatic bucket fallback and fail-safe handling if bucket permissions are restricted.
  */
-async function uploadToSupabase(fileBuffer, originalName = 'image.jpg', mimeType = 'image/jpeg', bucketName = 'avatars') {
+async function uploadToSupabase(fileBuffer, originalName = 'image.jpg', mimeType = 'image/jpeg', bucketName = 'avatars', userId = 'anon') {
   await ensureBucket(bucketName);
 
   // Extract extension and generate a clean unique filename
   const cleanExt = (originalName.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${cleanExt || 'jpg'}`;
+  const fileName = `${userId}/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${cleanExt || 'jpg'}`;
 
   // Attempt upload to target bucket
   let uploadRes = await supabase.storage
@@ -67,9 +67,8 @@ async function uploadToSupabase(fileBuffer, originalName = 'image.jpg', mimeType
 
   // If Supabase Storage policies block anonymous upload, return Data URI fallback so app never crashes
   if (uploadRes.error) {
-    console.warn("Supabase Storage Policy Notice:", uploadRes.error.message);
-    const base64Data = fileBuffer.toString('base64');
-    return `data:${mimeType || 'image/jpeg'};base64,${base64Data}`;
+    console.error("Supabase Storage Upload Failed:", uploadRes.error.message);
+    throw new Error(`Image upload failed: ${uploadRes.error.message}`);
   }
 
   const finalBucket = (uploadRes.data && uploadRes.data.path && uploadRes.data.path.includes('avatars')) ? 'avatars' : bucketName;

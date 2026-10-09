@@ -61,9 +61,11 @@ router.post('/', authenticateToken, async (req, res) => {
       }
     });
 
-    // Notify the seller about the new review
-    const reviewer = await prisma.user.findUnique({ where: { id: reviewerId }, select: { name: true, username: true } });
-    const gig = await prisma.gig.findUnique({ where: { id: order.gigId }, select: { title: true } });
+    // Notify the seller about the new review (parallel fetch for notification text)
+    const [reviewer, gig] = await Promise.all([
+      prisma.user.findUnique({ where: { id: reviewerId }, select: { name: true, username: true } }),
+      prisma.gig.findUnique({ where: { id: order.gigId }, select: { title: true } })
+    ]);
     await createNotification({
       userId: order.sellerId,
       title: "New Review Received! ⭐",

@@ -19,6 +19,7 @@ import Avatar from '@/components/ui/Avatar';
 import StarRating from '@/components/ui/StarRating';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { apiFetch } from '@/constants/api';
+import { cachedFetch } from '@/constants/apiCache';
 import RazorpayCheckout from '@/components/ui/RazorpayCheckout';
 
 
@@ -40,6 +41,7 @@ export default function FreelancerProfile() {
   const [reviewsList, setReviewsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [messagingLoading, setMessagingLoading] = useState(false);
 
   const [razorpayModalVisible, setRazorpayModalVisible] = useState(false);
   const [razorpayData, setRazorpayData] = useState<{
@@ -52,37 +54,31 @@ export default function FreelancerProfile() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string>('');
   const [currentUserName, setCurrentUserName] = useState<string>('');
-
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const data = await apiFetch<{ user: any }>('/auth/profile');
-        if (data?.user) {
-          setCurrentUserId(data.user.id);
-          setCurrentUserEmail(data.user.email || '');
-          setCurrentUserName(data.user.name || data.user.username || '');
-        }
-      } catch {
-        // Guest or unauthenticated
-      }
-    };
-    fetchCurrentUser();
-  }, []);
-
   const [completedOrdersCount, setCompletedOrdersCount] = useState<number>(0);
 
   useEffect(() => {
-    const fetchGigDetails = async () => {
+    if (!id) return;
+
+    // Fire all 3 API calls simultaneously — no more waterfall waiting
+    const fetchAll = async () => {
       try {
-        const data = await apiFetch<{ gig: any; completedOrdersCount?: number }>(`/gigs/${id}`);
-        setGig(data.gig);
-        setCompletedOrdersCount(data.completedOrdersCount || 0);
-        
-        try {
-          const reviewsData = await apiFetch<any>(`/reviews/gig/${id}`);
-          setReviewsList(reviewsData.reviews || []);
-        } catch (revErr) {
-          console.error('Error fetching reviews for gig:', revErr);
+        const [gigData, reviewsData, profileData] = await Promise.all([
+          apiFetch<{ gig: any; completedOrdersCount?: number }>(`/gigs/${id}`),
+          apiFetch<any>(`/reviews/gig/${id}`).catch(() => ({ reviews: [] })),
+          cachedFetch<{ user: any }>('/auth/profile').catch(() => null),
+        ]);
+
+        if (gigData?.gig) {
+          setGig(gigData.gig);
+          setCompletedOrdersCount(gigData.completedOrdersCount || 0);
+        }
+        if (reviewsData?.reviews) {
+          setReviewsList(reviewsData.reviews);
+        }
+        if (profileData?.user) {
+          setCurrentUserId(profileData.user.id);
+          setCurrentUserEmail(profileData.user.email || '');
+          setCurrentUserName(profileData.user.name || profileData.user.username || '');
         }
       } catch (err: any) {
         console.error('Error fetching gig details:', err);
@@ -91,9 +87,8 @@ export default function FreelancerProfile() {
         setLoading(false);
       }
     };
-    if (id) {
-      fetchGigDetails();
-    }
+
+    fetchAll();
   }, [id]);
 
   const handleBack = () => {
@@ -247,30 +242,38 @@ export default function FreelancerProfile() {
       return;
     }
 
-    // Always navigate to chat — the chat screen handles the lock state itself
-    router.push({
-      pathname: '/chats/[id]',
-      params: {
-        id: freelancer.id,
-        freelancerId: freelancer.id,
-        freelancerName: freelancer.name,
-        freelancerAvatar: freelancer.avatar,
-        projectTitle: gig.title,
-      },
-    });
+    // 1. Immediately update state so button turns into spinner on current frame
+    setMessagingLoading(true);
+
+    // 2. Short 50ms delay forces React Native to repaint the Message button spinner before navigating
+    setTimeout(() => {
+      router.push({
+        pathname: '/chats/[id]',
+        params: {
+          id: freelancer.id,
+          freelancerId: freelancer.id,
+          freelancerName: freelancer.name,
+          freelancerAvatar: freelancer.avatar,
+          projectTitle: gig.title,
+        },
+      });
+
+      // Reset loading state after 3s if user returns back
+      setTimeout(() => setMessagingLoading(false), 3000);
+    }, 50);
   };
 
   const freelancer = useMemo(() => {
     if (!gig) return null;
-    const skills = gig.seller.skills 
-      ? gig.seller.skills.split(',').map((s: string) => s.trim()) 
+    const skills = gig.seller.skills
+      ? gig.seller.skills.split(',').map((s: string) => s.trim())
       : [];
 
     const totalReviews = reviewsList.length;
     const avgRating = totalReviews > 0
       ? parseFloat((reviewsList.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1))
       : 5.0; // Default to 5.0 for new freelancers
-      
+
     return {
       id: gig.seller.id,
       name: gig.seller.name || gig.seller.username,
@@ -427,12 +430,19 @@ export default function FreelancerProfile() {
       <View style={styles.body}>
         <View style={styles.ctaRowTop}>
           <TouchableOpacity
-            style={[styles.quickActionButton, styles.quickActionSecondary]}
+            style={[styles.quickActionButton, styles.quickActionSecondary, messagingLoading && { opacity: 0.7 }]}
             activeOpacity={0.86}
             onPress={handleMessagePress}
+            disabled={messagingLoading}
           >
-            <MaterialCommunityIcons name="message-outline" size={16} color={Colors.primaryDark} />
-            <Text style={styles.quickActionSecondaryText}>Message</Text>
+            {messagingLoading ? (
+              <ActivityIndicator size="small" color={Colors.primaryDark} />
+            ) : (
+              <MaterialCommunityIcons name="message-outline" size={16} color={Colors.primaryDark} />
+            )}
+            <Text style={styles.quickActionSecondaryText}>
+              {messagingLoading ? 'Opening...' : 'Message'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -446,8 +456,8 @@ export default function FreelancerProfile() {
               {currentUserId && gig?.sellerId === currentUserId
                 ? 'Your Service'
                 : submittingOrder
-                ? 'Hiring...'
-                : 'Hire'}
+                  ? 'Hiring...'
+                  : 'Hire'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -515,8 +525,8 @@ export default function FreelancerProfile() {
           const portfolioImgs: string[] = Array.isArray(gig?.portfolio) && gig.portfolio.length > 0
             ? gig.portfolio
             : gig?.imageUrl
-            ? [gig.imageUrl]
-            : [];
+              ? [gig.imageUrl]
+              : [];
 
           if (portfolioImgs.length === 0) return null;
 

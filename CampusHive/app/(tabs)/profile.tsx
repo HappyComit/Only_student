@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { router, useFocusEffect } from 'expo-router';
+
 import * as ImagePicker from 'expo-image-picker';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/theme';
 import { useAppMode } from '@/constants/appMode';
@@ -22,6 +22,7 @@ import Avatar from '@/components/ui/Avatar';
 import ModernButton from '@/components/ui/ModernButton';
 import NotificationBell from '@/components/ui/NotificationBell';
 import { apiFetch, removeToken, uploadImage, isGuestUser } from '@/constants/api';
+import { cachedFetch, clearAllCache } from '@/constants/apiCache';
 import { requireAuthOrPromptGuest } from '@/constants/guestGuard';
 
 function formatK(value: number) {
@@ -126,18 +127,18 @@ export default function ProfileScreen() {
 
   const [stats, setStats] = useState<any>({ completedOrders: 0, earnings: 0, followers: 0, following: 0 });
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (forceRefresh = false) => {
     try {
       const guest = await isGuestUser();
       setIsGuest(guest);
       if (!guest) {
-        const data = await apiFetch<{ user: any }>('/auth/profile');
+        const data = await cachedFetch<{ user: any }>('/auth/profile', { forceRefresh });
         setProfile(data.user);
         setIsFreelancerMode(data.user.isSeller);
 
         try {
           const endpoint = data.user.isSeller ? '/orders/seller' : '/orders/buyer';
-          const ordersData = await apiFetch<{ count: number; orders: any[] }>(endpoint);
+          const ordersData = await cachedFetch<{ count: number; orders: any[] }>(endpoint, { forceRefresh });
           if (ordersData?.orders) {
             const completed = ordersData.orders.filter((o: any) => o.status === 'COMPLETED');
             const totalEarned = completed.reduce((sum: number, o: any) => sum + (o.price || 0), 0);
@@ -159,10 +160,7 @@ export default function ProfileScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
+  // Only use useFocusEffect (not both useEffect + useFocusEffect which caused double-fetch)
   useFocusEffect(
     React.useCallback(() => {
       fetchProfile();
@@ -293,6 +291,7 @@ export default function ProfileScreen() {
           } catch (e) {
             console.error('Logout error on backend:', e);
           }
+          clearAllCache(); // Clear API cache on logout
           await removeToken();
           router.replace('/(auth)/auth');
         },

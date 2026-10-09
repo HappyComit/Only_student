@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../config/prisma');
 const authenticateToken = require('../middleware/authMiddleware');
+const { clearFeedCache } = require('./gigs');
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
@@ -49,66 +50,59 @@ router.post('/login', (req, res) => {
 router.get('/stats', adminAuth, async (req, res) => {
   try {
 
-    const totalUsers = await prisma.user.count();
-    const totalGigs = await prisma.gig.count();
-    const totalOrders = await prisma.order.count();
-    const inProgressOrders = await prisma.order.count({
-      where: { status: 'IN_PROGRESS' }
-    });
-    const pendingOrders = await prisma.order.count({
-      where: { status: { in: ['PENDING', 'PENDING_ACCEPTANCE'] } }
-    });
-    const completedOrders = await prisma.order.count({
-      where: { status: 'COMPLETED' }
-    });
-    const declinedOrders = await prisma.order.count({
-      where: { status: 'DECLINED' }
-    });
+    // ── Run ALL count queries + data queries in parallel (was 7+ sequential round-trips) ──
+    const [
+      totalUsers,
+      totalGigs,
+      totalOrders,
+      inProgressOrders,
+      pendingOrders,
+      completedOrders,
+      declinedOrders,
+      revenueAgg,
+      allUsers,
+      allGigs,
+      allOrders
+    ] = await Promise.all([
+      prisma.user.count(),
+      prisma.gig.count(),
+      prisma.order.count(),
+      prisma.order.count({ where: { status: 'IN_PROGRESS' } }),
+      prisma.order.count({ where: { status: { in: ['PENDING', 'PENDING_ACCEPTANCE'] } } }),
+      prisma.order.count({ where: { status: 'COMPLETED' } }),
+      prisma.order.count({ where: { status: 'DECLINED' } }),
+      // Use aggregate instead of fetching all orders just for revenue sum
+      prisma.order.aggregate({ _sum: { price: true } }),
+      // Fetch management tables
+      prisma.user.findMany({
+        take: 50,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true, name: true, username: true, email: true, phone: true,
+          isSeller: true, isVerified: true, university: true, createdAt: true
+        }
+      }),
+      prisma.gig.findMany({
+        take: 50,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          seller: { select: { name: true, username: true, email: true } }
+        }
+      }),
+      prisma.order.findMany({
+        take: 50,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          buyer: { select: { name: true, username: true, email: true } },
+          seller: { select: { name: true, username: true, email: true } },
+          gig: { select: { title: true } }
+        }
+      })
+    ]);
 
     // Calculate revenue metrics
-    const orders = await prisma.order.findMany({
-      select: { price: true, bookingFeePaid: true, status: true }
-    });
-
     const bookingFeeRevenue = totalOrders * 6.0; // ₹6 platform fee per booking
-    const totalGrossVolume = orders.reduce((sum, o) => sum + (o.price || 0), 0);
-
-    // Fetch all users
-    const allUsers = await prisma.user.findMany({
-      take: 50,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        email: true,
-        phone: true,
-        isSeller: true,
-        isVerified: true,
-        university: true,
-        createdAt: true
-      }
-    });
-
-    // Fetch all gigs
-    const allGigs = await prisma.gig.findMany({
-      take: 50,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        seller: { select: { name: true, username: true, email: true } }
-      }
-    });
-
-    // Fetch all orders
-    const allOrders = await prisma.order.findMany({
-      take: 50,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        buyer: { select: { name: true, username: true, email: true } },
-        seller: { select: { name: true, username: true, email: true } },
-        gig: { select: { title: true } }
-      }
-    });
+    const totalGrossVolume = revenueAgg._sum.price || 0;
 
     return res.json({
       metrics: {
@@ -170,6 +164,7 @@ router.delete('/gigs/:id', adminAuth, async (req, res) => {
     await prisma.review.deleteMany({ where: { gigId: id } });
     await prisma.order.deleteMany({ where: { gigId: id } });
     await prisma.gig.delete({ where: { id } });
+    clearFeedCache(); // Invalidate feed cache so deleted gig disappears immediately
     return res.json({ message: "Gig deleted successfully." });
   } catch (error) {
     console.error("Admin Delete Gig Error:", error);
@@ -184,14 +179,20 @@ router.delete('/gigs/:id', adminAuth, async (req, res) => {
 router.delete('/users/:id', adminAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    // Cascade delete all dependent child records first due to PostgreSQL foreign key constraints
-    await prisma.review.deleteMany({ where: { OR: [{ reviewerId: id }, { sellerId: id }] } });
-    await prisma.message.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } });
-    await prisma.notification.deleteMany({ where: { userId: id } });
-    await prisma.order.deleteMany({ where: { OR: [{ buyerId: id }, { sellerId: id }] } });
-    await prisma.gig.deleteMany({ where: { sellerId: id } });
+    // Cascade delete all dependent child records in parallel (they're independent of each other)
+    await Promise.all([
+      prisma.review.deleteMany({ where: { OR: [{ reviewerId: id }, { sellerId: id }] } }),
+      prisma.message.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } }),
+      prisma.notification.deleteMany({ where: { userId: id } }),
+    ]);
+    // Orders and gigs must be deleted after reviews (reviews reference orders and gigs)
+    await Promise.all([
+      prisma.order.deleteMany({ where: { OR: [{ buyerId: id }, { sellerId: id }] } }),
+      prisma.gig.deleteMany({ where: { sellerId: id } }),
+    ]);
 
     await prisma.user.delete({ where: { id } });
+    clearFeedCache(); // Invalidate feed cache so deleted seller's gigs disappear immediately
     return res.json({ message: "User account deleted successfully." });
   } catch (error) {
     console.error("Admin Delete User Error:", error);

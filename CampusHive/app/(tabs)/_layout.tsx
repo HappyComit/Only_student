@@ -4,19 +4,19 @@ import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, Typography } from '@/constants/theme';
-import { apiFetch } from '@/constants/api';
+import { cachedFetch } from '@/constants/apiCache';
 import { connectSocket, disconnectSocket } from '@/constants/socket';
 
 type TabIconProps = {
   name: string;
-  color: string;
+  color: string | import('react-native').ColorValue;
   focused: boolean;
 };
 
 function TabIcon({ name, color, focused }: TabIconProps) {
   return (
     <View style={[styles.iconContainer, focused && styles.iconActive]}>
-      <MaterialCommunityIcons name={name as any} size={24} color={color} />
+      <MaterialCommunityIcons name={name as any} size={24} color={color as string} />
     </View>
   );
 }
@@ -27,7 +27,7 @@ export default function TabsLayout() {
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const data = await apiFetch<{ threads: { unreadCount?: number }[] }>('/messages');
+      const data = await cachedFetch<{ threads: { unreadCount?: number }[] }>('/messages', { ttl: 30_000 });
       if (data?.threads) {
         const total = data.threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0);
         setTotalUnread(total);

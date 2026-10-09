@@ -2,9 +2,13 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
+import { enableFreeze } from 'react-native-screens';
 import { Colors } from '@/constants/theme';
 import { AppModeProvider } from '@/constants/appMode';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+
+// Freeze off-screen tabs to reduce JS thread work during tab switching
+enableFreeze(true);
 
 // Prevent native Expo launcher screen from flashing before React mounts
 SplashScreen.preventAutoHideAsync().catch(() => { });

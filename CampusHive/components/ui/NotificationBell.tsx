@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, TouchableOpacity, View, Text } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { useRouter, useFocusEffect } from 'expo-router';
+
 import { Colors, Typography } from '@/constants/theme';
-import { apiFetch } from '@/constants/api';
+import { cachedFetch } from '@/constants/apiCache';
 
 interface NotificationBellProps {
   color?: string;
@@ -24,7 +24,8 @@ export default function NotificationBell({
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const res = await apiFetch('/notifications');
+      // Use cached fetch with 30s TTL — deduplicates across multiple NotificationBell instances
+      const res = await cachedFetch('/notifications', { ttl: 30_000 });
       if (res && typeof res.unreadCount === 'number') {
         setUnreadCount(res.unreadCount);
       } else if (res && Array.isArray(res.notifications)) {

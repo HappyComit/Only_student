@@ -512,8 +512,10 @@ function TabBar({
   );
 }
 
+// Moved to module scope — StyleSheet.create() runs once at load, not on every render
+const styles = getStyles();
+
 export default function AdminPanelScreen() {
-  const styles = getStyles();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
   const [stats, setStats] = useState<any>({

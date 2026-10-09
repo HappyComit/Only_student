@@ -10,22 +10,26 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+
 import Avatar from '@/components/ui/Avatar';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import NotificationBell from '@/components/ui/NotificationBell';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/theme';
 import { useAppMode } from '@/constants/appMode';
-import { apiFetch } from '@/constants/api';
-import { connectSocket, disconnectSocket, getSocket } from '@/constants/socket';
+import { cachedFetch } from '@/constants/apiCache';
+import { connectSocket } from '@/constants/socket';
 
 type FilterType = 'all' | 'unread' | 'active' | 'completed';
 
 function formatPreviewTime(value: string) {
   return value;
 }
+
+// Stable separator component defined at module scope (Fix 14: avoids new component + style on every render)
+const separatorStyle = { height: Spacing.sm };
+const ChatItemSeparator = () => <View style={separatorStyle} />;
 
 export default function ChatsTabScreen() {
   const { isFreelancerMode } = useAppMode();
@@ -36,10 +40,10 @@ export default function ChatsTabScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchThreads = async (showLoading = true) => {
+  const fetchThreads = async (showLoading = true, forceRefresh = false) => {
     if (showLoading) setLoading(true);
     try {
-      const data = await apiFetch<{ count: number; threads: any[] }>('/messages');
+      const data = await cachedFetch<{ count: number; threads: any[] }>('/messages', { forceRefresh, ttl: 30_000 });
       setThreads(data.threads || []);
     } catch (e) {
       console.error('Failed to fetch chat threads:', e);
@@ -65,7 +69,7 @@ export default function ChatsTabScreen() {
 
       const handleThreadsUpdated = () => {
         // Silently refresh threads when any conversation gets a new message
-        fetchThreads(false);
+        fetchThreads(false, true);
       };
 
       sock.on('threads_updated', handleThreadsUpdated);
@@ -80,13 +84,14 @@ export default function ChatsTabScreen() {
     return () => {
       mounted = false;
       cleanupPromise.then((cleanup) => cleanup?.());
-      disconnectSocket();
+      // REMOVED: disconnectSocket() — was destroying the global singleton socket,
+      // breaking real-time updates for notifications, tab badge, and chat detail
     };
   }, []);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchThreads(false);
+    fetchThreads(false, true); // forceRefresh on pull-to-refresh
   };
 
   const decorated = useMemo(
@@ -158,6 +163,10 @@ export default function ChatsTabScreen() {
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        initialNumToRender={10}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[Colors.primary]} />
         }
@@ -230,12 +239,16 @@ export default function ChatsTabScreen() {
             </View>
           </View>
         }
-        ItemSeparatorComponent={() => <View style={{ height: Spacing.sm }} />}
+        ItemSeparatorComponent={ChatItemSeparator}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.threadCard}
             activeOpacity={0.86}
-            onPress={() => router.push(`/chats/${item.id}`)}
+            onPress={() => {
+              // Prefetch message history into cache before screen mounts
+              cachedFetch(`/messages/${item.id}`);
+              router.push(`/chats/${item.id}`);
+            }}
           >
             <View style={styles.threadTopRow}>
               <Avatar uri={item.counterpartAvatar} size={48} />

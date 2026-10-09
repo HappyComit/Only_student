@@ -21,7 +21,7 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-export default function Avatar({ uri, name, size = 48, style, showBorder = false, borderColor = Colors.primary }: Props) {
+const Avatar = React.memo(function Avatar({ uri, name, size = 48, style, showBorder = false, borderColor = Colors.primary }: Props) {
   const borderStyle = showBorder
     ? { borderWidth: 2.5, borderColor }
     : {};
@@ -39,6 +39,7 @@ export default function Avatar({ uri, name, size = 48, style, showBorder = false
           showBorder && { borderWidth: 2.5, borderColor },
         ]}
         contentFit="cover"
+        cachePolicy="memory-disk"
       />
     );
   }
@@ -61,7 +62,9 @@ export default function Avatar({ uri, name, size = 48, style, showBorder = false
       </Text>
     </View>
   );
-}
+});
+
+export default Avatar;
 
 const styles = StyleSheet.create({
   placeholder: {
@@ -74,3 +77,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+

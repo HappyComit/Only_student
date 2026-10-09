@@ -40,7 +40,8 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
       req.file.buffer,
       req.file.originalname || 'upload.jpg',
       req.file.mimetype || 'image/jpeg',
-      bucket
+      bucket,
+      req.user?.userId || 'anon'
     );
 
     return res.status(200).json({

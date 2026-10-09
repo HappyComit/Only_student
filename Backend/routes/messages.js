@@ -24,39 +24,33 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: "You cannot send a message to yourself." });
     }
 
-    // 3. Verify that the receiver actually exists in our system
-    const receiverExists = await prisma.user.findUnique({ where: { id: receiverId } });
-    if (!receiverExists) {
-      return res.status(404).json({ error: "Recipient user not found." });
-    }
-
-    // 3.5 Check if chat section is unlocked via an active order (₹6 booking fee paid)
-    // First prioritize PENDING_ACCEPTANCE orders (the newest hire request awaiting seller action)
-    let activeOrder = await prisma.order.findFirst({
-      where: {
-        OR: [
-          { buyerId: senderId, sellerId: receiverId },
-          { buyerId: receiverId, sellerId: senderId }
-        ],
-        bookingFeePaid: true,
-        status: 'PENDING_ACCEPTANCE'
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-    // Fallback: if no pending order, find any active order (chat is still unlocked)
-    if (!activeOrder) {
-      activeOrder = await prisma.order.findFirst({
+    // 3. Run receiver check and order lookup in PARALLEL (saves one round-trip)
+    const [receiverExists, matchingOrders] = await Promise.all([
+      prisma.user.findUnique({ where: { id: receiverId }, select: { id: true } }),
+      // Single query to find any active order — replaces two sequential findFirst calls
+      prisma.order.findMany({
         where: {
           OR: [
             { buyerId: senderId, sellerId: receiverId },
             { buyerId: receiverId, sellerId: senderId }
           ],
           bookingFeePaid: true,
-          status: { in: ['IN_PROGRESS', 'DELIVERED', 'COMPLETED'] }
+          status: { in: ['PENDING_ACCEPTANCE', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'] }
         },
-        orderBy: { createdAt: 'desc' }
-      });
+        orderBy: { createdAt: 'desc' },
+        take: 5, // Only need a few to determine status
+        select: { id: true, status: true }
+      })
+    ]);
+
+    if (!receiverExists) {
+      return res.status(404).json({ error: "Recipient user not found." });
     }
+
+    // Prioritize PENDING_ACCEPTANCE, then fallback to any active order
+    const activeOrder = matchingOrders.find(o => o.status === 'PENDING_ACCEPTANCE')
+      || matchingOrders.find(o => ['IN_PROGRESS', 'DELIVERED', 'COMPLETED'].includes(o.status))
+      || null;
 
     if (!activeOrder) {
       return res.status(403).json({
@@ -108,36 +102,39 @@ router.post('/', authenticateToken, async (req, res) => {
 /**
  * @route   GET /api/messages
  * @desc    Retrieves a list of all unique chat conversation threads for the current user (Secure route)
+ *          OPTIMIZED: Uses raw SQL DISTINCT ON to get only the latest message per partner
+ *          instead of fetching ALL messages into memory and grouping in JavaScript.
  */
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    // Fetch all messages where current user is either sender or receiver
-    const messages = await prisma.message.findMany({
-      where: {
-        OR: [
-          { senderId: userId },
-          { receiverId: userId }
-        ]
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+    // ── Step 1: Get the latest message per conversation partner using DISTINCT ON ──
+    // This runs entirely in the database — only returns 1 row per partner (not all messages)
+    const latestMessages = await prisma.$queryRaw`
+      SELECT DISTINCT ON (partner_id)
+        id,
+        "senderId",
+        "receiverId",
+        content,
+        "isRead",
+        "createdAt",
+        CASE
+          WHEN "senderId" = ${userId} THEN "receiverId"
+          ELSE "senderId"
+        END AS partner_id
+      FROM "Message"
+      WHERE "senderId" = ${userId} OR "receiverId" = ${userId}
+      ORDER BY partner_id, "createdAt" DESC
+    `;
 
-    // Extract unique partner IDs and keep their latest message
-    const partnerMap = new Map();
-    for (const msg of messages) {
-      const partnerId = msg.senderId === userId ? msg.receiverId : msg.senderId;
-      if (!partnerMap.has(partnerId)) {
-        partnerMap.set(partnerId, msg);
-      }
+    if (!latestMessages || latestMessages.length === 0) {
+      return res.json({ count: 0, threads: [], page: 1, totalPages: 0, totalCount: 0 });
     }
 
-    const partnerIds = Array.from(partnerMap.keys());
+    const partnerIds = latestMessages.map(m => m.partner_id);
 
-    // Fetch user details and unread counts in parallel for all unique partners
+    // ── Step 2: Fetch partner user details and unread counts in parallel ──
     const [partners, unreadCounts] = await Promise.all([
       prisma.user.findMany({
         where: {
@@ -163,27 +160,32 @@ router.get('/', authenticateToken, async (req, res) => {
       })
     ]);
 
-    // Build a lookup map: partnerId -> unreadCount
+    // Build lookup maps
+    const partnerMap = new Map();
+    for (const p of partners) {
+      partnerMap.set(p.id, p);
+    }
+
     const unreadMap = new Map();
     for (const entry of unreadCounts) {
       unreadMap.set(entry.senderId, entry._count.id);
     }
 
-    const threads = partners.map(partner => {
-      const latestMsg = partnerMap.get(partner.id);
-      return {
-        id: partner.id, // Using partner user ID as thread ID
-        counterpart: partner,
+    // ── Step 3: Build thread objects (already sorted by createdAt DESC from SQL) ──
+    const threads = latestMessages
+      .filter(msg => partnerMap.has(msg.partner_id)) // Safety: skip if partner was deleted
+      .map(msg => ({
+        id: msg.partner_id,
+        counterpart: partnerMap.get(msg.partner_id),
         latestMessage: {
-          id: latestMsg.id,
-          text: latestMsg.content,
-          createdAt: latestMsg.createdAt,
-          senderId: latestMsg.senderId,
-          receiverId: latestMsg.receiverId
+          id: msg.id,
+          text: msg.content,
+          createdAt: msg.createdAt,
+          senderId: msg.senderId,
+          receiverId: msg.receiverId
         },
-        unreadCount: unreadMap.get(partner.id) || 0
-      };
-    });
+        unreadCount: unreadMap.get(msg.partner_id) || 0
+      }));
 
     // Sort threads by latest message timestamp descending
     threads.sort((a, b) => new Date(b.latestMessage.createdAt) - new Date(a.latestMessage.createdAt));
@@ -232,29 +234,35 @@ router.get('/:userId', authenticateToken, async (req, res) => {
       bookingFeePaid: true,
     };
 
-    // Run all queries in parallel — cuts ~60% latency vs sequential
+    // Run all queries in parallel with selective column fetching for maximum speed
     const [userExists, pendingOrder, fallbackOrder, totalCount, chatHistory] = await Promise.all([
-      // 1. Check if chat partner exists
-      prisma.user.findUnique({ where: { id: receiverId } }),
+      // 1. Check if chat partner exists (only fetch required profile fields)
+      prisma.user.findUnique({
+        where: { id: receiverId },
+        select: { id: true, username: true, name: true, avatarUrl: true }
+      }),
 
       // 2a. PRIORITY: Find PENDING_ACCEPTANCE order (new hire request awaiting seller action)
       prisma.order.findFirst({
         where: { ...orderWhere, status: 'PENDING_ACCEPTANCE' },
+        select: { id: true, buyerId: true, sellerId: true, status: true, price: true, bookingFee: true },
         orderBy: { createdAt: 'desc' }
       }),
 
       // 2b. FALLBACK: Find any other active order (chat stays unlocked)
       prisma.order.findFirst({
         where: { ...orderWhere, status: { in: ['IN_PROGRESS', 'DELIVERED', 'COMPLETED'] } },
+        select: { id: true, buyerId: true, sellerId: true, status: true, price: true, bookingFee: true },
         orderBy: { createdAt: 'desc' }
       }),
 
       // 3. Count total messages for pagination metadata
       prisma.message.count({ where: chatWhere }),
 
-      // 4. Fetch paginated chat history
+      // 4. Fetch paginated chat history (only needed message columns)
       prisma.message.findMany({
         where: chatWhere,
+        select: { id: true, senderId: true, receiverId: true, content: true, createdAt: true },
         orderBy: { createdAt: 'asc' },
         skip,
         take: limit,

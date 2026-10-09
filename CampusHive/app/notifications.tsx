@@ -12,9 +12,10 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/theme';
 import { apiFetch, getToken } from '@/constants/api';
+import { cachedFetch } from '@/constants/apiCache';
 import { connectSocket } from '@/constants/socket';
-import { router } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { router, useFocusEffect } from 'expo-router';
+
 
 type NotificationType = 'order' | 'community' | 'event' | 'review' | 'payment';
 type FilterType = 'all' | 'unread' | 'payments' | 'community';
@@ -489,8 +490,10 @@ function NotificationCard({
 let cachedNotifications: any[] = [];
 let cachedOrderStatusMap: Record<string, string> = {};
 
+// Moved to module scope — StyleSheet.create() runs once at load, not on every render
+const styles = getStyles();
+
 export default function NotificationsScreen() {
-  const styles = getStyles();
   const [filter, setFilter] = useState<FilterType>('all');
   const [liveList, setLiveList] = useState<any[]>(cachedNotifications);
   const [loading, setLoading] = useState<boolean>(cachedNotifications.length === 0);
@@ -620,10 +623,10 @@ export default function NotificationsScreen() {
       // Hide loading spinner strictly when real network fetch finishes
       setLoading(false);
 
-      // Background sync for order status updates (non-blocking)
+      // Background sync for order status updates (non-blocking, uses cache)
       Promise.all([
-        apiFetch<{ orders: any[] }>('/orders/seller').catch(() => null),
-        apiFetch<{ orders: any[] }>('/orders/buyer').catch(() => null),
+        cachedFetch<{ orders: any[] }>('/orders/seller').catch(() => null),
+        cachedFetch<{ orders: any[] }>('/orders/buyer').catch(() => null),
       ]).then(([sellerOrdersRes, buyerOrdersRes]) => {
         const freshStatusMap: Record<string, string> = {};
         if (sellerOrdersRes && Array.isArray(sellerOrdersRes.orders)) {
@@ -857,7 +860,7 @@ export default function NotificationsScreen() {
 
                           const token = await getToken();
                           if (token) {
-                            const profileRes = await apiFetch<{ user: any }>('/auth/profile').catch(() => null);
+                            const profileRes = await cachedFetch<{ user: any }>('/auth/profile').catch(() => null);
                             const myId = profileRes?.user?.id;
                             const partnerId = res.order.buyerId === myId ? res.order.sellerId : res.order.buyerId;
                             if (partnerId) {

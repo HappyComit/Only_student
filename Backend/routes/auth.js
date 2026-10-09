@@ -547,7 +547,6 @@ router.put('/profile', authenticateToken, async (req, res) => {
       year,
       skills,
       responseTime,
-      isVerified,
       phone
     } = req.body;
 
@@ -558,6 +557,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
     });
 
     // Update user record in database
+    // NOTE: isVerified is intentionally excluded — only admins can set verified status
     const updatedUser = await prisma.user.update({
       where: { id: req.user.userId },
       data: {
@@ -574,7 +574,6 @@ router.put('/profile', authenticateToken, async (req, res) => {
         skills: safe.skills !== undefined ? safe.skills : undefined,
         responseTime: safe.responseTime !== undefined ? safe.responseTime : undefined,
         phone: safe.phone !== undefined ? safe.phone : undefined,
-        isVerified: isVerified !== undefined ? isVerified : undefined
       }
     });
 

@@ -113,7 +113,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export async function apiFetch<T = any>(
   path: string,
   options: RequestInit = {},
-  retries: number = 2
+  retries: number = 1
 ): Promise<T> {
   const token = await getToken();
 
@@ -136,12 +136,12 @@ export async function apiFetch<T = any>(
     }
 
     const controller = new AbortController();
-    // 50-second timeout guard to accommodate Render free tier cold starts
+    // 15-second timeout guard (cron job keeps server warm, no cold starts)
     const timeoutId = setTimeout(() => {
       try {
         controller.abort();
       } catch { }
-    }, 50000);
+    }, 15000);
 
     const onCallerAbort = () => {
       try {

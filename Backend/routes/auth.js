@@ -146,6 +146,15 @@ router.post('/login', authRateLimiter, async (req, res) => {
       return res.status(400).json({ error: "Invalid email or password." });
     }
 
+    // 3.5 Block unverified users — they must verify their email OTP first
+    if (!user.isVerified) {
+      return res.status(403).json({
+        error: "Please verify your email address before logging in. Check your inbox for the 6-digit code.",
+        requiresVerification: true,
+        email: user.email
+      });
+    }
+
     // 4. Generate a JWT token containing user details
     const token = jwt.sign(
       {

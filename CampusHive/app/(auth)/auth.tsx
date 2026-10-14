@@ -352,7 +352,17 @@ export default function AuthScreen() {
       }
     } catch (error: any) {
       const msg = error.message || 'Authentication failed. Please try again.';
-      Alert.alert('Authentication Error', msg);
+
+      // If the server says the user hasn't verified their email yet,
+      // re-open the OTP modal so they can complete verification.
+      if (msg.includes('verify your email')) {
+        setVerifyEmail(email.trim());
+        setVerifyOtp('');
+        setResendCooldown(0);
+        setVerifyModalVisible(true);
+      } else {
+        Alert.alert('Authentication Error', msg);
+      }
     } finally {
       setLoading(false);
     }

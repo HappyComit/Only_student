@@ -1,510 +1,79 @@
-<![CDATA[<div align="center">
-
 # 🎓 OnlyStudents
-
 ### The Campus Freelance Marketplace
 
 **Hire talented students. Sell your skills. Build your college portfolio.**
 
-[![React Native](https://img.shields.io/badge/React_Native-0.81-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactnative.dev/)
-[![Expo](https://img.shields.io/badge/Expo_SDK-54-000020?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Prisma](https://img.shields.io/badge/Prisma-5.10-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://supabase.com/)
-[![Razorpay](https://img.shields.io/badge/Razorpay-Live-0C2451?style=for-the-badge&logo=razorpay&logoColor=white)](https://razorpay.com/)
+OnlyStudents is a student-exclusive freelance marketplace that connects university students offering services with students looking to hire them.
 
-[Features](#-features) · [Tech Stack](#-tech-stack) · [Getting Started](#-getting-started) · [Architecture](#-architecture) · [API Reference](#-api-reference) · [Contributing](#-contributing)
-
-</div>
+Think of it as **Fiverr for your campus** — a platform where students can showcase their skills, earn money, and collaborate with other talented students.
 
 ---
 
-## 📖 About
+## 📖 About the Project
 
-**OnlyStudents** is a mobile-first freelance marketplace designed exclusively for university students. Think of it as *Fiverr, but for your campus* — students can post their skills (web development, graphic design, video editing, photography, etc.) as service listings ("gigs"), and other students can hire them directly through the app.
+OnlyStudents aims to create a dedicated freelancing ecosystem within universities, allowing students to monetize their skills and find affordable services within their campus.
 
-The platform handles the full lifecycle: **discovery → hiring → secure payment → real-time chat → delivery → review**.
-
-> 🏫 Currently live at **Chandigarh University** with domain-restricted registration (`@cuchd.in` emails only).
-
----
+The platform currently serves Chandigarh University students through university email-based registration (`@cuchd.in`).
 
 ## ✨ Features
 
-### 🛒 Marketplace
-- Browse and search freelance gigs by category (Dev, Design, Video, Photo, Writing & more)
-- Featured gig promotion system for sellers
-- Detailed gig pages with pricing, delivery timeline, and seller profile
-- Guest browsing mode — explore without signing up
-
-### 💬 Real-Time Messaging
-- Instant one-on-one chat between buyer and seller powered by **Socket.IO**
-- JWT-authenticated WebSocket connections
-- Read receipts and unread message tracking
-- Chat unlocks after order acceptance
-
-### 💳 Secure Payments
-- **Razorpay** integration for secure UPI, card, and wallet payments
-- ₹6 booking fee charged upon hiring (platform revenue)
-- Full gig price paid directly to seller's UPI
-- Cryptographic payment verification with Razorpay signature validation
-
-### 📦 Order Management
-- Full order state machine: `PENDING → IN_PROGRESS → DELIVERED → COMPLETED`
-- Accept/Decline workflow for sellers
-- Order tracking dashboard for both buyers and sellers
-- Cancellation flow with notification alerts
-
-### ⭐ Reviews & Ratings
-- Post-completion 5-star review system
-- Reviews linked to specific orders and gigs
-- Seller reputation scoring
-
-### 🔔 Notifications
-- In-app notification center for order updates, messages, and system alerts
-- Real-time push via Socket.IO event emission
-- Notification badge with unread count
-
-### 👑 Admin Panel
-- Web-based admin dashboard at `/admin`
-- Platform statistics: total users, gigs, orders, revenue
-- Freelancer verification (approve/reject)
-- User management and moderation tools
-
-### 🔐 Authentication & Security
-- University email-restricted registration (`@cuchd.in`)
-- bcrypt password hashing with salt rounds
-- JWT session tokens (7-day expiry, HTTP-only cookies)
-- Email-based OTP password reset via Nodemailer
-- Per-user rate limiting on auth endpoints (prevents campus Wi-Fi conflicts)
-- Input sanitization on all user-submitted fields
-
-### 🌐 Additional Features
-- Animated glassmorphic UI with ambient motion mesh
-- Community hub for student groups
-- Campus events listing and discovery
-- Earnings dashboard for sellers with analytics
-- Legal pages (Terms, Privacy, Refund Policy)
-- Health check endpoint for uptime monitoring
-
----
+- **Student Marketplace:** Browse, search, and post freelance services across categories like development, design, photography, video editing, and writing.
+- **Real-Time Chat:** One-to-one messaging between buyers and sellers using Socket.IO.
+- **Secure Payments:** Razorpay integration with payment verification and booking fee management.
+- **Order Management:** Complete order lifecycle with seller acceptance, delivery tracking, and cancellation.
+- **Reviews & Ratings:** Five-star rating system to build seller credibility.
+- **Notifications:** Real-time alerts for messages, orders, and platform updates.
+- **Admin Dashboard:** Manage users, verify freelancers, and monitor platform activity.
+- **Authentication:** University email-based registration, JWT authentication, password hashing, and OTP-based password reset.
+- **Campus Community:** Student communities, campus events, and seller earnings analytics.
 
 ## 🛠 Tech Stack
 
-### Frontend — Mobile App
-| Technology | Purpose |
+| Category | Technologies |
 |---|---|
-| **React Native 0.81** | Cross-platform mobile framework |
-| **Expo SDK 54** | Development toolchain, OTA updates, native APIs |
-| **Expo Router v6** | File-based navigation with typed routes |
-| **TypeScript** | Type-safe development |
-| **Socket.IO Client** | Real-time WebSocket communication |
-| **React Native Reanimated** | Smooth 60fps animations |
-| **Expo Linear Gradient** | Premium gradient UI effects |
-| **React Native Gifted Charts** | Earnings analytics visualizations |
-| **AsyncStorage** | Local session persistence |
+| Mobile App | React Native, Expo, TypeScript |
+| Navigation | Expo Router |
+| Backend | Node.js, Express.js |
+| Database | PostgreSQL, Supabase |
+| ORM | Prisma |
+| Real-Time Communication | Socket.IO |
+| Authentication | JWT, bcryptjs |
+| Payments | Razorpay |
+| Email Services | Nodemailer |
+| Storage | Supabase Storage |
 
-### Backend — API Server
-| Technology | Purpose |
-|---|---|
-| **Node.js + Express** | REST API server |
-| **Prisma ORM 5.10** | Type-safe database access & migrations |
-| **PostgreSQL (Supabase)** | Cloud-hosted relational database |
-| **Socket.IO** | Real-time bidirectional event-based communication |
-| **Razorpay SDK** | Payment gateway integration |
-| **Nodemailer** | Transactional email (OTP, password reset) |
-| **JWT (jsonwebtoken)** | Stateless authentication tokens |
-| **bcryptjs** | Password hashing |
-| **express-rate-limit** | API rate limiting & abuse prevention |
-| **Supabase Storage** | File/image hosting via S3-compatible buckets |
+## 🏗 Project Architecture
 
----
+The project consists of two main applications:
 
-## 🚀 Getting Started
+**1. CampusHive – Mobile Application**
+- Built using React Native and Expo.
+- Handles user authentication, marketplace browsing, orders, messaging, communities, and events.
+- Provides separate experiences for buyers and sellers.
 
-### Prerequisites
+**2. Backend – API Server**
+- Built using Node.js and Express.js.
+- Handles authentication, marketplace operations, order management, payments, and notifications.
+- Uses Prisma ORM with PostgreSQL for database management.
+- Integrates Socket.IO for real-time communication.
 
-- **Node.js** ≥ 18.0.0
-- **npm** or **yarn**
-- **Expo CLI** — `npm install -g expo-cli`
-- **Expo Go** app on your phone (for development)
-- A **Supabase** project (for PostgreSQL database)
-- A **Razorpay** account (for payment processing)
+## 🗄 Core Database Models
 
-### 1. Clone the Repository
+The application uses six primary database models:
 
-```bash
-git clone https://github.com/HappyComit/Only_student.git
-cd Only_student
-```
-
-### 2. Backend Setup
-
-```bash
-cd Backend
-
-# Install dependencies
-npm install
-
-# Create your environment file
-cp .env.example .env
-```
-
-Edit `.env` with your credentials:
-
-```env
-PORT=5000
-JWT_SECRET=your_super_secret_jwt_key
-
-# Supabase PostgreSQL
-DATABASE_URL="postgresql://..."
-DIRECT_URL="postgresql://..."
-
-# Supabase Storage
-SUPABASE_URL="https://your-project.supabase.co"
-SUPABASE_ANON_KEY="your_anon_key"
-
-# Razorpay
-RAZORPAY_KEY_ID="rzp_test_..."
-RAZORPAY_KEY_SECRET="your_secret"
-
-# SMTP (Gmail App Password)
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT=465
-SMTP_USER="your-email@gmail.com"
-SMTP_PASS="your_app_password"
-```
-
-```bash
-# Generate Prisma client & push schema to database
-npx prisma generate
-npx prisma db push
-
-# Start the development server
-npm run dev
-```
-
-The backend will start on `http://localhost:5000`.
-
-### 3. Frontend Setup
-
-```bash
-cd ../CampusHive
-
-# Install dependencies
-npm install
-
-# Update the API base URL in constants/api.ts to point to your backend
-# For local development: http://<your-local-ip>:5000/api
-
-# Start the Expo development server
-npx expo start
-```
-
-Scan the QR code with **Expo Go** on your phone, or press `a` for Android emulator / `i` for iOS simulator.
+- **User:** Student profiles and account information.
+- **Gig:** Freelance services listed by students.
+- **Order:** Hiring transactions and order status.
+- **Message:** Buyer-seller conversations.
+- **Review:** Ratings and feedback.
+- **Notification:** User notifications and activity alerts.
 
 ---
 
-## 🏗 Architecture
+<p align="center">
 
-```
-OnlyStudents/
-├── Backend/                    # Node.js + Express API Server
-│   ├── config/                 # Database & service configuration
-│   │   └── prisma.js           # Prisma client singleton
-│   ├── middleware/             
-│   │   ├── authMiddleware.js   # JWT token verification
-│   │   ├── rateLimiter.js      # Per-user auth rate limiting
-│   │   └── sanitize.js         # Input sanitization utilities
-│   ├── prisma/
-│   │   └── schema.prisma       # Database schema (6 models)
-│   ├── routes/
-│   │   ├── auth.js             # Register, Login, Forgot/Reset Password, Profile
-│   │   ├── gigs.js             # CRUD for freelance service listings
-│   │   ├── orders.js           # Order lifecycle management
-│   │   ├── messages.js         # Chat message history
-│   │   ├── payments.js         # Razorpay order creation & verification
-│   │   ├── reviews.js          # Post-order ratings & feedback
-│   │   ├── notifications.js    # In-app notification system
-│   │   ├── upload.js           # Supabase file upload handler
-│   │   └── admin.js            # Admin moderation endpoints
-│   ├── utils/
-│   │   └── logger.js           # Structured console logger
-│   ├── public/                 # Static web admin portal
-│   ├── socket.js               # Socket.IO initialization & auth
-│   └── server.js               # Express app entry point
-│
-├── CampusHive/                 # React Native (Expo) Mobile App
-│   ├── app/
-│   │   ├── (auth)/             # Auth flow screens
-│   │   │   ├── auth.tsx        # Login / Signup with animated UI
-│   │   │   ├── onboarding.tsx  # First-launch onboarding cards
-│   │   │   └── splash.tsx      # Animated splash screen
-│   │   ├── (tabs)/             # Main tab navigation
-│   │   │   ├── index.tsx       # Home feed (gigs, events, communities)
-│   │   │   ├── marketplace.tsx # Browse & search gig listings
-│   │   │   ├── chats.tsx       # Conversation list
-│   │   │   ├── communities.tsx # Student community groups
-│   │   │   ├── events.tsx      # Campus events calendar
-│   │   │   └── profile.tsx     # User profile & settings
-│   │   ├── marketplace/        # Gig detail pages
-│   │   ├── chats/              # Individual chat screens
-│   │   ├── legal/              # Terms, Privacy, Refund pages
-│   │   ├── admin.tsx           # Mobile admin dashboard
-│   │   ├── earnings.tsx        # Seller earnings & analytics
-│   │   ├── notifications.tsx   # Notification center
-│   │   ├── post-service.tsx    # Create/edit gig form
-│   │   └── create-event.tsx    # Event creation form
-│   ├── components/ui/          # Reusable UI components
-│   ├── constants/              # Theme, API config, design tokens
-│   └── data/                   # Mock data for development
-│
-└── README.md
-```
+**Built with ❤️ by Team HappyComit**
 
----
+*OnlyStudents — Where Campus Talent Meets Opportunity.*
 
-## 🗄 Database Schema
-
-The backend uses **Prisma ORM** with **PostgreSQL** (hosted on Supabase). The schema consists of 6 interconnected models:
-
-```mermaid
-erDiagram
-    USER ||--o{ GIG : "posts (seller)"
-    USER ||--o{ ORDER : "places (buyer)"
-    USER ||--o{ ORDER : "fulfills (seller)"
-    USER ||--o{ MESSAGE : "sends"
-    USER ||--o{ MESSAGE : "receives"
-    USER ||--o{ REVIEW : "writes"
-    USER ||--o{ REVIEW : "receives"
-    USER ||--o{ NOTIFICATION : "has"
-    GIG ||--o{ ORDER : "purchased via"
-    GIG ||--o{ REVIEW : "reviewed on"
-    ORDER ||--o| REVIEW : "has"
-
-    USER {
-        string id PK
-        string email UK
-        string username UK
-        string passwordHash
-        boolean isSeller
-        boolean isAdmin
-        boolean isVerified
-        string name
-        string university
-        string department
-        string year
-        string phone
-        string skills
-        string upiId
-    }
-
-    GIG {
-        string id PK
-        string title
-        string description
-        float price
-        int deliveryDays
-        string category
-        boolean isFeatured
-        string sellerId FK
-    }
-
-    ORDER {
-        string id PK
-        string status
-        float price
-        float bookingFee
-        boolean bookingFeePaid
-        boolean gigPricePaid
-        string gigId FK
-        string buyerId FK
-        string sellerId FK
-    }
-
-    MESSAGE {
-        string id PK
-        string content
-        boolean isRead
-        string senderId FK
-        string receiverId FK
-    }
-
-    REVIEW {
-        string id PK
-        int rating
-        string comment
-        string orderId FK
-        string gigId FK
-    }
-
-    NOTIFICATION {
-        string id PK
-        string title
-        string message
-        string type
-        boolean isRead
-        string userId FK
-    }
-```
-
----
-
-## 📡 API Reference
-
-All endpoints are prefixed with `/api`. Authentication uses Bearer token in the `Authorization` header.
-
-### Auth — `/api/auth`
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `POST` | `/register` | Create a new student account | ❌ |
-| `POST` | `/login` | Login & receive JWT token | ❌ |
-| `POST` | `/forgot-password` | Send OTP to registered email | ❌ |
-| `POST` | `/reset-password` | Verify OTP & set new password | ❌ |
-| `POST` | `/logout` | Clear session cookie | ❌ |
-| `GET` | `/profile` | Get current user profile | ✅ |
-| `PUT` | `/profile` | Update current user profile | ✅ |
-
-### Gigs — `/api/gigs`
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `GET` | `/` | List all gigs (with filters) | ❌ |
-| `GET` | `/:id` | Get gig details by ID | ❌ |
-| `POST` | `/` | Create a new gig listing | ✅ |
-| `PUT` | `/:id` | Update an existing gig | ✅ |
-| `DELETE` | `/:id` | Delete a gig | ✅ |
-
-### Orders — `/api/orders`
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `POST` | `/` | Place a new order | ✅ |
-| `GET` | `/my` | Get user's orders (buyer + seller) | ✅ |
-| `PUT` | `/:id/status` | Update order status | ✅ |
-| `PUT` | `/:id/accept` | Seller accepts order | ✅ |
-| `PUT` | `/:id/decline` | Seller declines order | ✅ |
-
-### Payments — `/api/payments`
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `GET` | `/razorpay/key` | Get Razorpay public key | ❌ |
-| `POST` | `/razorpay/create-order` | Create Razorpay payment order | ✅ |
-| `POST` | `/razorpay/verify` | Verify payment signature | ✅ |
-
-### Messages — `/api/messages`
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `GET` | `/conversations` | Get all chat threads | ✅ |
-| `GET` | `/:userId` | Get messages with a user | ✅ |
-| `POST` | `/` | Send a new message | ✅ |
-
-### Reviews — `/api/reviews`
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `POST` | `/` | Submit a review for a completed order | ✅ |
-| `GET` | `/gig/:gigId` | Get reviews for a specific gig | ❌ |
-
-### Notifications — `/api/notifications`
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `GET` | `/` | Get user's notifications | ✅ |
-| `PUT` | `/:id/read` | Mark notification as read | ✅ |
-
-### Admin — `/api/admin`
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `GET` | `/auth/admin/stats` | Platform statistics & user lists | ✅ 👑 |
-| `POST` | `/auth/admin/verify/:userId` | Approve/reject freelancer | ✅ 👑 |
-
----
-
-## 🔐 Environment Variables
-
-Create a `.env` file in the `Backend/` directory. **Never commit this file.**
-
-| Variable | Description | Example |
-|---|---|---|
-| `PORT` | Server port | `5000` |
-| `JWT_SECRET` | Secret key for JWT signing | `your_secret_key` |
-| `DATABASE_URL` | PostgreSQL connection string (pooled) | `postgresql://...` |
-| `DIRECT_URL` | PostgreSQL direct connection string | `postgresql://...` |
-| `SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` |
-| `SUPABASE_ANON_KEY` | Supabase anonymous API key | `eyJ...` |
-| `RAZORPAY_KEY_ID` | Razorpay public key | `rzp_live_...` |
-| `RAZORPAY_KEY_SECRET` | Razorpay secret key | `...` |
-| `SMTP_HOST` | SMTP server host | `smtp.gmail.com` |
-| `SMTP_PORT` | SMTP server port | `465` |
-| `SMTP_USER` | Email sender address | `your@gmail.com` |
-| `SMTP_PASS` | Gmail App Password | `xxxx xxxx xxxx xxxx` |
-
----
-
-## 📱 Screenshots
-
-> *Coming soon — screenshots of the app's key screens will be added here.*
-
-<!--
-<div align="center">
-<img src="./screenshots/login.png" width="200" />
-<img src="./screenshots/home.png" width="200" />
-<img src="./screenshots/marketplace.png" width="200" />
-<img src="./screenshots/chat.png" width="200" />
-</div>
--->
-
----
-
-## 🗺 Roadmap
-
-- [ ] **Push Notifications** — Firebase Cloud Messaging integration
-- [ ] **Email Verification OTP** — Verify student email during signup
-- [ ] **Search & Filters** — Search by skill, price range, and college
-- [ ] **Referral System** — "Invite a friend → Both get ₹10 credit"
-- [ ] **Delivery File Upload** — Sellers upload completed work through the app
-- [ ] **Multi-College Expansion** — Remove single-domain restriction, add college selector
-- [ ] **Dark Mode** — System-wide dark theme toggle
-- [ ] **Report/Block** — User safety and moderation features
-- [ ] **Dispute Resolution** — Buyer-seller conflict management workflow
-- [ ] **Google Play Store** — Production release on Android
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Here's how you can help:
-
-1. **Fork** the repository
-2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
-3. **Commit** your changes: `git commit -m 'Add amazing feature'`
-4. **Push** to the branch: `git push origin feature/amazing-feature`
-5. **Open** a Pull Request
-
-### Development Guidelines
-
-- Follow existing code style and project structure
-- Add meaningful comments for complex logic
-- Test your changes on both Android and iOS (if possible)
-- Keep PRs focused — one feature per pull request
-- Update documentation if you change APIs or add new features
-
----
-
-## 📄 License
-
-This project is proprietary software. All rights reserved.
-
----
-
-## 👥 Team
-
-Built with ❤️ by **Team HappyComit** at Chandigarh University.
-
----
-
-<div align="center">
-
-**⭐ Star this repo if you found it useful!**
-
-*OnlyStudents — Where campus talent meets opportunity.*
-
-</div>
-]]>
+</p>
